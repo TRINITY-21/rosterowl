@@ -305,6 +305,19 @@ class AppState {
     } catch {
       this.toast('Could not save to this browser — download a backup to be safe.', 'warn');
     }
+    // The header's class chip is drawn by an inline script (so pages that ship
+    // no JavaScript stay that way) and cannot observe this store. Tell it.
+    if (typeof window !== 'undefined') {
+      const cls = this.activeClass;
+      window.dispatchEvent(
+        new CustomEvent('rosterowl-class-change', {
+          detail:
+            cls && cls.id !== SAMPLE_CLASS_ID
+              ? { name: cls.name, count: cls.students.length }
+              : null,
+        })
+      );
+    }
     const newest = this.versions[0];
     if (!newest || Date.now() - newest.ts >= AUTO_SNAPSHOT_MS) this.captureVersion('auto');
   }

@@ -33,10 +33,15 @@
   let versionsOpen = $state(false);
   let restoreInput: HTMLInputElement | undefined = $state();
   let rosterOpen = $state(true);
+  let frameEl: HTMLDivElement | undefined = $state();
 
-  /** Close any open toolbar popover when clicking elsewhere or acting. */
+  /**
+   * Close any open toolbar popover when clicking elsewhere or acting. Scoped to
+   * this component's own <details> — a document-wide query would also slam the
+   * header's tools panel shut on every pointerdown in here.
+   */
   function closePopovers(e?: Event) {
-    for (const d of document.querySelectorAll<HTMLDetailsElement>('details[open]')) {
+    for (const d of frameEl?.querySelectorAll<HTMLDetailsElement>('details[open]') ?? []) {
       if (!e || !d.contains(e.target as Node)) d.open = false;
     }
   }
@@ -107,7 +112,7 @@
 
 <svelte:window onpointerdown={(e) => closePopovers(e)} />
 
-<div class="frame">
+<div class="frame" bind:this={frameEl}>
   <div class="toolbar">
     <div class="cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />

@@ -39,7 +39,17 @@
   --shadow-2:
     0 2px 6px light-dark(rgb(36 50 48 / 0.08), rgb(0 0 0 / 0.35)),
     0 8px 24px light-dark(rgb(36 50 48 / 0.12), rgb(0 0 0 / 0.45));
+  /* A sheet of paper lying on the page: contact shadow at the edge, then a
+     long soft cast. Deeper than --shadow-2 because the sheets are tilted. */
+  --shadow-paper:
+    0 1px 1px light-dark(rgb(36 50 48 / 0.1), rgb(0 0 0 / 0.4)),
+    0 10px 20px light-dark(rgb(36 50 48 / 0.1), rgb(0 0 0 / 0.45)),
+    0 24px 48px light-dark(rgb(36 50 48 / 0.1), rgb(0 0 0 / 0.5));
   --scrim: light-dark(rgb(36 50 48 / 0.44), rgb(0 0 0 / 0.6));
+
+  /* Hairline rules do the work that nested rounded cards used to. */
+  --rule: 1px solid var(--line);
+  --rule-strong: 1px solid var(--line-strong);
 
   --radius-xs: 5px;
   --radius-s: 8px;
@@ -56,7 +66,8 @@
   --text-lg: 1.125rem;
   --text-xl: 1.35rem;
   --text-2xl: clamp(1.7rem, 3vw, 2.25rem);
-  --text-display: clamp(2.65rem, 7vw, 4.8rem);
+  --text-3xl: clamp(2rem, 3.6vw, 2.75rem);
+  --text-display: clamp(2.5rem, 6vw, 4rem);
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;

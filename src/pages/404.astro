@@ -1,7 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import SiteFooter from '../components/SiteFooter.astro';
+import Icon from '../components/Icon.svelte';
 import OwlMark from '../components/OwlMark.svelte';
+import SiteFooter from '../components/SiteFooter.astro';
+import { SEATING, TOOL_GROUPS } from '../lib/tools';
+
+// Every tool, not a stale subset — a wrong URL should still reach all ten.
+const [, ...otherGroups] = TOOL_GROUPS;
+const rest = otherGroups.flatMap((g) => g.tools);
 ---
 
 <Layout
@@ -10,18 +16,34 @@ import OwlMark from '../components/OwlMark.svelte';
   noindex
 >
   <main>
-    <OwlMark size={72} />
+    <OwlMark size={64} />
     <h1>Hoo? That page flew off.</h1>
-    <p>No worries — everything useful is one hop away:</p>
-    <nav aria-label="Popular tools">
-      <a class="btn primary" href="/seating-chart/">Seating chart maker</a>
-      <a class="btn" href="/group-maker/">Group maker</a>
-      <a class="btn" href="/picker/">Student picker</a>
-      <a class="btn" href="/certificates/">Certificates</a>
-      <a class="btn" href="/checklist/">Checklist</a>
-      <a class="btn" href="/name-tags/">Name tags</a>
-      <a class="btn" href="/seating-chart/templates/">Blank templates</a>
+    <p>No worries — everything useful is one hop away.</p>
+
+    <a class="btn primary large" href={SEATING.href}>
+      {SEATING.title}
+      <Icon name="arrow-right" size={17} />
+    </a>
+
+    <nav aria-label="All classroom tools">
+      <ul>
+        {rest.map((tool) => (
+          <li>
+            <a href={tool.href}>
+              <Icon name={tool.icon} size={16} />
+              {tool.label}
+            </a>
+          </li>
+        ))}
+        <li>
+          <a href="/seating-chart/templates/">
+            <Icon name="file" size={16} />
+            Blank templates
+          </a>
+        </li>
+      </ul>
     </nav>
+
     <p class="home"><a href="/">← RosterOwl home</a></p>
   </main>
 
@@ -30,30 +52,71 @@ import OwlMark from '../components/OwlMark.svelte';
 
 <style>
   main {
-    max-width: 36rem;
+    max-width: 42rem;
     margin: 0 auto;
-    padding: var(--space-8) var(--page-gutter) var(--space-6);
+    padding: var(--space-8) var(--page-gutter) var(--space-7);
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--space-3);
   }
+
   h1 {
     font-size: var(--text-2xl);
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
   }
+
   p {
-    color: var(--muted);
     margin: 0;
+    color: var(--muted);
   }
-  nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    justify-content: center;
+
+  main > .btn {
     margin-top: var(--space-2);
   }
+
+  nav {
+    width: 100%;
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: var(--rule);
+  }
+
+  nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: var(--control-h-sm);
+    padding: 0.4rem 0.8rem;
+    border: var(--rule);
+    border-radius: var(--radius-pill);
+    color: var(--ink);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+  }
+
+  nav a :global(svg) {
+    color: var(--brand);
+  }
+
+  nav a:hover {
+    border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+    background: var(--brand-soft);
+  }
+
   .home {
     margin-top: var(--space-4);
   }

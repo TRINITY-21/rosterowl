@@ -122,10 +122,23 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 button:focus-visible,
+summary:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 3px;
+  /* Paper-coloured halo fills the offset gap, so the green ring stays legible
+     even when the focused control sits on a surface tinted the same green
+     (a .btn.primary inside [data-sample-banner], for instance). */
+  box-shadow: 0 0 0 3px var(--paper);
+}
+
+/* Containers that clip their own corners would clip an outset ring with it.
+   Inside those, the ring is drawn within the element instead of around it. */
+#main-content .faq summary:focus-visible,
+.print-preview :focus-visible {
+  outline-offset: -3px;
+  box-shadow: none;
 }
 
 ::selection {
