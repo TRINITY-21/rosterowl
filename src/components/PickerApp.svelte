@@ -4,8 +4,11 @@
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import Icon from './Icon.svelte';
+  import SampleBanner from './SampleBanner.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
 
   app.load();
 
@@ -51,22 +54,27 @@
 
 <svelte:window {onkeydown} />
 
+
+<ToolBoundary tool="student picker">
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} onswitch={() => (lastPickedId = null)} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Try a fair round, then add your own students.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Try a fair round, then add your own students.
+    </SampleBanner>
   {/if}
 
   {#if !cls || cls.students.length === 0}
     <EmptyState
+      icon="shuffle"
       title={cls ? 'No students on this roster' : 'No class yet'}
       actionLabel={cls ? 'Add students' : 'Paste your class list'}
       onaction={() => (pasteMode = cls ? 'add' : 'new')}
@@ -74,7 +82,7 @@
       Paste your class list once — it powers this and every other RosterOwl tool.
     </EmptyState>
   {:else if availableCount === 0}
-    <EmptyState compact title="Everyone is marked absent" href="/seating-chart/" actionLabel="Mark students present">
+    <EmptyState compact icon="alert" title="Everyone is marked absent" href="/seating-chart/" actionLabel="Mark students present">
       Every student on this roster is marked absent, so the picker has nobody to call on. Mark
       someone present in the seating chart — your round continues where it left off.
     </EmptyState>
@@ -151,6 +159,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   .stage {

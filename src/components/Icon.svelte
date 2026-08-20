@@ -13,6 +13,8 @@
     | 'lock'
     | 'download'
     | 'upload'
+    | 'share'
+    | 'copy'
     | 'shuffle'
     | 'dots'
     | 'sun'
@@ -30,10 +32,14 @@
     | 'printer'
     | 'tag'
     | 'layers'
-    | 'hash';
+    | 'hash'
+    | 'cloud'
+    | 'cloud-off';
 
   const paths: Record<IconName, string> = {
     plus: 'M12 5v14M5 12h14',
+    cloud: 'M17.5 19a4.5 4.5 0 0 0 .5-8.97A6.5 6.5 0 0 0 5.2 11.2 3.9 3.9 0 0 0 6 19z',
+    'cloud-off': 'M17.5 19a4.5 4.5 0 0 0 .5-8.97 6.5 6.5 0 0 0-1.2-3.02M6 19a3.9 3.9 0 0 1-.8-7.8 6.5 6.5 0 0 1 1.9-3.4M3 3l18 18',
     minus: 'M5 12h14',
     home: 'M3 10.5 12 3l9 7.5M5 9.5V21h5v-6h4v6h5V9.5',
     magnet:
@@ -44,6 +50,11 @@
     lock: 'M6 11h12v9H6zM9 11V7a3 3 0 0 1 6 0v4',
     download: 'M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 19h16',
     upload: 'M12 15V3m0 0 4.5 4.5M12 3 7.5 7.5M4 19h16',
+    // Tray with an arrow leaving it — the OS share sheet, not the three-dot node
+    // graph, which reads as "post to social media" rather than "send this file".
+    share:
+      'M12 3v12M8.5 6.5 12 3l3.5 3.5M8 10H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-2',
+    copy: 'M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM6 16a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2',
     shuffle: 'M3 6h4l10 12h4m0 0-3-3m3 3-3 3M3 18h4l2.6-3.1M14.4 9.1 17 6h4m0 0-3-3m3 3-3 3',
     dots: 'M5 12h.01M12 12h.01M19 12h.01',
     sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',

@@ -111,10 +111,18 @@ textarea {
   transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 
-input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']):hover,
-select:hover,
-textarea:hover {
+input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']):hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
   border-color: var(--brand);
+}
+
+input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']):disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+  border-color: var(--line);
 }
 
 input[type='checkbox'],
@@ -278,11 +286,11 @@ html {
 .btn svg {
   flex: none;
 }
-.btn:hover {
+.btn:hover:not(:disabled) {
   background: var(--surface-2);
   border-color: var(--brand);
 }
-.btn:active {
+.btn:active:not(:disabled) {
   transform: translateY(1px);
 }
 .btn.primary {
@@ -290,7 +298,7 @@ html {
   border-color: var(--brand);
   color: var(--on-brand);
 }
-.btn.primary:hover {
+.btn.primary:hover:not(:disabled) {
   background: var(--brand-strong);
   border-color: var(--brand-strong);
 }
@@ -298,7 +306,7 @@ html {
   border-color: transparent;
   background: transparent;
 }
-.btn.quiet:hover {
+.btn.quiet:hover:not(:disabled) {
   background: var(--surface-2);
 }
 .btn.small {
@@ -324,7 +332,7 @@ html {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
 }
 
-.btn.danger:hover {
+.btn.danger:hover:not(:disabled) {
   background: var(--danger-soft);
   border-color: var(--danger);
 }
@@ -335,12 +343,13 @@ html {
   color: light-dark(#fdfcf8, #141d1a);
 }
 
-.btn.danger-fill:hover {
+.btn.danger-fill:hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger) 88%, black);
   border-color: color-mix(in srgb, var(--danger) 88%, black);
 }
 
-[data-sample-banner] {
+[data-sample-banner],
+[data-preset-banner] {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -468,20 +477,25 @@ html {
   font-weight: 700;
 }
 
-/* The download button is the panel's primary action. These panels run taller
-   than the viewport, so it stays pinned to the bottom of the panel rather than
+/* The download row is the panel's primary action. These panels run taller than
+   the viewport, so it stays pinned to the bottom of the panel rather than
    sitting below the fold under six option fields. The surface-coloured ring
-   masks the options scrolling behind it. */
-.print-options .btn.primary {
+   masks the options scrolling behind it.
+   Applied to the row rather than the button alone: the row now carries the
+   Share menu beside it, and pinning only the button would leave the menu to
+   scroll away on its own.
+   margin-top:auto does the same job for the short panels: the column is as tall
+   as the preview beside it, so without it the row floated mid-panel with a band
+   of dead space underneath. Sticky covers the tall panels, auto covers the
+   short ones — where the options overflow there is no free space and the auto
+   margin resolves to zero, so the two never fight. */
+.print-options .share-actions {
   position: sticky;
   bottom: 0;
   z-index: 1;
-  margin-top: var(--space-1);
+  margin-top: auto;
   box-shadow: 0 0 0 0.6rem var(--surface);
-}
-
-.print-options .btn.primary:hover {
-  box-shadow: 0 0 0 0.6rem var(--surface), var(--shadow-1);
+  background: var(--surface);
 }
 
 /* Controls follow their panel, never their longest option label. Tick boxes are
@@ -638,8 +652,13 @@ html {
   filter: drop-shadow(0 1px 2px light-dark(rgb(36 50 48 / 0.12), rgb(0 0 0 / 0.4)));
 }
 
+/* flex:1 so the body fills whatever height the tallest card in the row sets.
+   Without it the body was content-sized, the `margin-top: auto` on .actions had
+   no free space to eat, and a card with a two-line description sat its download
+   button 18px lower than its neighbours'. */
 .blank-gallery .body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-4);
@@ -805,12 +824,6 @@ html {
   border: 1px solid var(--line);
   border-radius: var(--radius-l);
   background: var(--surface);
-  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
-}
-
-#main-content .feature-grid > div:hover {
-  border-color: color-mix(in srgb, var(--brand) 34%, var(--line));
-  box-shadow: var(--shadow-1);
 }
 
 #main-content .feature-grid h3 {
@@ -841,9 +854,13 @@ html {
   color: var(--ink);
 }
 
+/* Left-aligned, not centred. The h1 above it and the tool below it both start
+   at the page gutter; a centred reading column broke that edge and left the FAQ
+   floating in the middle of the page with no relationship to anything. Same
+   measure as .page-head, same left edge — the page reads as one column. */
 #main-content .content {
   max-width: var(--content-narrow);
-  margin: var(--space-8) auto 0;
+  margin: var(--space-8) 0 0;
 }
 
 #main-content .feature-grid p,
@@ -935,7 +952,8 @@ html {
     font-size: 1rem;
   }
 
-  [data-sample-banner] {
+  [data-sample-banner],
+  [data-preset-banner] {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -964,8 +982,14 @@ html {
     overflow: visible;
   }
 
-  .print-options .btn.primary {
+  /* Nothing scrolls inside the panel here, so nothing needs pinning — and a
+     sticky row in a non-scrolling column just parks itself over the options
+     below it. Targets .share-actions because that is what the desktop rule
+     pins; it used to name .btn.primary, which stopped being the pinned element
+     when the Share menu joined the row, so the row stayed stuck on phones. */
+  .print-options .share-actions {
     position: static;
+    margin-top: var(--space-1);
     box-shadow: none;
   }
 
@@ -984,9 +1008,11 @@ html {
   .site-foot,
   .skip-link,
   .toasts,
+  .sw-update,
   .canvas-pill,
   .action-bar,
   [data-sample-banner],
+  [data-preset-banner],
   .print-options {
     display: none !important;
   }
@@ -1022,3 +1048,30 @@ html {
     color: #555;
   }
 }
+
+/* The service-worker update prompt in Layout.astro. Sits above the toasts so a
+   tool's own messages are never covered by it. */
+.sw-update {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-4);
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: calc(100vw - 2 * var(--page-gutter));
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border: var(--rule-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sw-update[hidden] {
+  display: none;
+}
+

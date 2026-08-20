@@ -51,7 +51,7 @@
       <input
         bind:value={className}
         autofocus
-        placeholder="e.g. Period 3 — English, Ms Rivera's 4th grade"
+        placeholder="e.g. Period 3 — English, Ms. Rivera's 4th grade"
       />
     </label>
   {/if}
@@ -69,11 +69,11 @@
   <div class="filerow">
     <label class="btn small upload" for={fileId}>
       <Icon name="upload" size={15} />
-      Or upload a CSV
+      Or open a CSV
     </label>
     <input id={fileId} class="sr-only" type="file" accept=".csv,.txt" onchange={onFile} />
     {#if fileError}<span class="err" role="alert">{fileError}</span>{/if}
-    <span class="privacy">Names stay in this browser — nothing is uploaded.</span>
+    <span class="privacy">Names stay on this device — nothing is uploaded unless you turn on sync.</span>
   </div>
 
   {#if parsed.length > 0}
@@ -87,7 +87,7 @@
           <span class="chip more">+{parsed.length - 30} more</span>
         {/if}
       </div>
-      <p class="fix">Someone missing or mangled? Edit the text above — the list updates live.</p>
+      <p class="fix">Someone missing or misread? Edit the text above — the list updates live.</p>
     </div>
   {/if}
 

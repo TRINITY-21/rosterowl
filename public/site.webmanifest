@@ -1,0 +1,40 @@
+{
+  "name": "RosterOwl — classroom tools",
+  "short_name": "RosterOwl",
+  "description": "Seating charts, groups, name tags and more. Free, no signup — your class list never leaves your browser.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#faf7f0",
+  "background_color": "#faf7f0",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Seating chart maker",
+      "short_name": "Seating chart",
+      "url": "/seating-chart/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Group maker",
+      "short_name": "Groups",
+      "url": "/group-maker/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Student picker",
+      "short_name": "Picker",
+      "url": "/picker/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

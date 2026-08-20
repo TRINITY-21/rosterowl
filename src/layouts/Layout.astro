@@ -2,16 +2,29 @@
 import '../styles/global.css';
 import Icon from '../components/Icon.svelte';
 import OwlMark from '../components/OwlMark.svelte';
-import { SEATING, TOOL_GROUPS, activeToolHref } from '../lib/tools';
+import { PRINTABLES, SEATING, TOOL_GROUPS, activeToolHref } from '../lib/tools';
+import { SITE_PAGES } from '../lib/site';
+import { SITE_URL, ogImageFor } from '../lib/seo';
 
 interface Props {
   title: string;
   description: string;
   /** Error pages: no canonical (the URL is not a real route) and no indexing. */
   noindex?: boolean;
+  /** Site-absolute path to a card image. Defaults to this page's own, or /og.png. */
+  ogImage?: string;
 }
-const { title, description, noindex = false } = Astro.props;
+const { title, description, noindex = false, ogImage } = Astro.props;
 const pathname = Astro.url.pathname;
+const canonical = `${SITE_URL}${pathname}`;
+const card = `${SITE_URL}${ogImage ?? ogImageFor(pathname)}`;
+// Titles already end in "| RosterOwl"; the card art already says it too, so the
+// alt text drops the suffix instead of saying the brand three times.
+const cardAlt = title.replace(/\s*[|—–-]\s*RosterOwl\s*$/, '');
+// Cloudflare Web Analytics: cookieless page counts, no consent banner needed.
+// Absent from local and preview builds so development is never counted — set
+// PUBLIC_CF_BEACON_TOKEN for production, where /privacy/ says it is running.
+const beaconToken = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
 const isHome = pathname === '/';
 const activeTool = activeToolHref(pathname);
 // The flagship leads the panel on its own; the rest fill the two columns below.
@@ -26,19 +39,31 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#faf7f0" />
+    <meta name="apple-mobile-web-app-title" content="RosterOwl" />
     {noindex ? (
       <meta name="robots" content="noindex, follow" />
     ) : (
-      <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+      <link rel="canonical" href={canonical} />
     )}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://rosterowl.com/og.png" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="RosterOwl" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content={card} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={cardAlt} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={card} />
+    <meta name="twitter:image:alt" content={cardAlt} />
     <link
       rel="preload"
       href="/fonts/AtkinsonHyperlegible-Regular.woff2"
@@ -69,10 +94,28 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
         }
       } catch {}
     </script>
+    {
+      beaconToken && (
+        <script
+          is:inline
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={JSON.stringify({ token: beaconToken })}
+        />
+      )
+    }
     <slot name="head" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="sw-update" hidden data-sw-update role="status">
+      <span>A new version of RosterOwl is ready.</span>
+      <button class="btn small primary" type="button" data-sw-reload>Reload</button>
+      <button class="icon-btn" type="button" data-sw-dismiss aria-label="Dismiss">
+        <Icon name="close" size={14} />
+      </button>
+    </div>
     <header class="site-shell">
       <div class="site-shell__inner">
         <a
@@ -137,9 +180,23 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
                 ))}
               </div>
 
-              <p class="panel-foot">
-                Every tool reads the same class list — paste it once. Nothing is ever uploaded.
-              </p>
+              <div class="panel-foot">
+                <p>
+                  Every tool reads the same class list — paste it once. Nothing is uploaded unless
+                  you turn on sync.
+                </p>
+                {/* Below 900px the header's own nav links are hidden, and until
+                    now the footer was the only way to reach these — a long
+                    scroll past a whole tool on a phone. Shown only at the width
+                    where the nav drops them, so the desktop panel stays clean. */}
+                <nav class="panel-pages" aria-label="More pages">
+                  {[PRINTABLES, ...SITE_PAGES].map((p) => (
+                    <a href={p.href} aria-current={pathname.startsWith(p.href) ? 'page' : undefined}>
+                      {p.label}
+                    </a>
+                  ))}
+                </nav>
+              </div>
             </div>
           </details>
 
@@ -168,6 +225,7 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
           <button
             class="theme-toggle"
             type="button"
+            aria-pressed="false"
             aria-label="Switch to dark chalkboard theme"
             title="Switch to dark chalkboard theme"
           >
@@ -189,8 +247,10 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
       (() => {
         const chip = document.querySelector('[data-class-chip]');
         if (!chip) return;
+        // Already on the seating chart — the chip would only link here.
+        const onSeating = location.pathname.startsWith('/seating-chart');
         const render = (cls) => {
-          if (!cls || !cls.name || !String(cls.name).trim()) {
+          if (onSeating || !cls || !cls.name || !String(cls.name).trim()) {
             chip.hidden = true;
             return;
           }
@@ -233,6 +293,7 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
           // the theme was toggled.
           button.setAttribute('aria-label', label);
           button.setAttribute('title', label);
+          button.setAttribute('aria-pressed', dark ? 'true' : 'false');
           // Browser chrome follows the applied theme, not the OS preference.
           document
             .querySelector('meta[name="theme-color"]')
@@ -278,6 +339,65 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
             if (e.target instanceof Element && e.target.closest('.tools-panel a')) menu.open = false;
           });
         }
+      })();
+    </script>
+
+    <script is:inline>
+      // Service worker: makes the whole suite work with no connection, which is
+      // the state of a great many school networks and every school corridor.
+      // Registered by hand rather than by an island so the static pages stay
+      // free of Svelte.
+      //
+      // The worker is built with registerType: 'prompt', so a new version waits
+      // instead of taking over — swapping the page out from under a teacher who
+      // is halfway through a seating chart would be the wrong trade.
+      (() => {
+        if (!('serviceWorker' in navigator)) return;
+
+        const banner = document.querySelector('[data-sw-update]');
+        let waiting = null;
+
+        function offerUpdate(worker) {
+          waiting = worker;
+          banner?.removeAttribute('hidden');
+        }
+
+        banner?.querySelector('[data-sw-dismiss]')?.addEventListener('click', () => {
+          banner.setAttribute('hidden', '');
+        });
+        banner?.querySelector('[data-sw-reload]')?.addEventListener('click', () => {
+          banner.setAttribute('hidden', '');
+          waiting?.postMessage({ type: 'SKIP_WAITING' });
+        });
+
+        window.addEventListener('load', async () => {
+          try {
+            const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+
+            // A worker already waiting from a previous visit. The controller
+            // check keeps the very first install quiet — there is nothing to
+            // update to yet, and "a new version is ready" would be a lie.
+            if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg.waiting);
+
+            reg.addEventListener('updatefound', () => {
+              const installing = reg.installing;
+              installing?.addEventListener('statechange', () => {
+                if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                  offerUpdate(installing);
+                }
+              });
+            });
+          } catch {
+            // No offline support this visit; everything else still works.
+          }
+        });
+
+        let reloading = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloading) return;
+          reloading = true;
+          location.reload();
+        });
       })();
     </script>
   </body>
@@ -545,6 +665,37 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     font-size: var(--text-xs);
   }
 
+  .panel-foot p {
+    margin: 0;
+  }
+
+  /* Hidden while the header still shows its own nav links; see the markup. */
+  .panel-pages {
+    display: none;
+    flex-wrap: wrap;
+    /* No row gap: each link is already a full touch target tall, so one would
+       only stretch a wrapped second row away from the first. */
+    gap: 0 var(--space-4);
+    margin-top: var(--space-2);
+    font-weight: 700;
+  }
+
+  .panel-pages a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .panel-pages a:hover {
+    color: var(--brand);
+  }
+
+  .panel-pages a[aria-current='page'] {
+    color: var(--ink);
+  }
+
   /* --- actions ------------------------------------------------------------ */
   .site-actions {
     display: flex;
@@ -639,6 +790,11 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
   @media (max-width: 900px) {
     .nav-link {
       display: none;
+    }
+
+    /* The Tools panel takes over as the only nav, so it carries the rest. */
+    .panel-pages {
+      display: flex;
     }
   }
 

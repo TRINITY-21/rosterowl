@@ -3,15 +3,18 @@
   import { confirmDialog } from '../lib/dialog.svelte';
   import { TEMPLATES, desksMatchTemplate } from '../lib/geometry';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import ConfirmDialog from './ConfirmDialog.svelte';
   import EmptyState from './EmptyState.svelte';
   import Icon from './Icon.svelte';
+  import SampleBanner from './SampleBanner.svelte';
   import PasteModal from './PasteModal.svelte';
   import PdfDialog from './PdfDialog.svelte';
   import RoomCanvas from './RoomCanvas.svelte';
   import RosterPanel from './RosterPanel.svelte';
   import Toasts from './Toasts.svelte';
   import VersionHistoryModal from './VersionHistoryModal.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
 
   let { preset }: { preset?: string } = $props();
 
@@ -96,7 +99,7 @@
     const ok = await confirmDialog({
       title: `Delete “${target.name}”?`,
       message: 'The class list, seating, rules, and job assignments are removed from this browser.',
-      detail: "This can't be undone — download a backup first if you're unsure.",
+      detail: "This can't be undone — save a backup file first if you're unsure.",
       confirmLabel: 'Delete class',
       tone: 'danger',
     });
@@ -112,6 +115,7 @@
 
 <svelte:window onpointerdown={(e) => closePopovers(e)} />
 
+<ToolBoundary tool="seating chart">
 <div class="frame" bind:this={frameEl}>
   <div class="toolbar">
     <div class="cluster">
@@ -146,6 +150,7 @@
           </div>
         </details>
       {/if}
+      <SyncMenu />
       <button
         class="btn"
         onclick={() => (versionsOpen = true)}
@@ -207,14 +212,13 @@
   </div>
 
   {#if app.isSample}
-    <div class="sample-banner" data-sample-banner>
-      <span><strong>Sample class.</strong> Move a desk, set a rule, or shuffle. Your changes stay on this device.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Move a desk, set a rule, or shuffle. Your changes stay on this device.
+    </SampleBanner>
   {/if}
 
   {#if presetPending && presetTemplate}
-    <div class="sample-banner" role="status" data-preset-banner>
+    <div role="status" data-preset-banner>
       <span>This page features the <strong>{presetTemplate.label}</strong> layout — your saved room is shown instead.</span>
       <button class="btn primary small" onclick={applyPreset}>Switch to this layout</button>
     </div>
@@ -293,8 +297,8 @@
   {/if}
 
   {#if !cls}
-    <EmptyState title="No class yet" actionLabel="Paste your class list" onaction={() => (pasteMode = 'new')}>
-      Paste a class list to start seating students. Your names stay in this browser.
+    <EmptyState icon="grid" title="No class yet" actionLabel="Paste your class list" onaction={() => (pasteMode = 'new')}>
+      Paste your class list to start seating students. It stays in this browser.
     </EmptyState>
   {:else}
   <button
@@ -326,6 +330,7 @@
 {/if}
 <Toasts />
 <ConfirmDialog />
+</ToolBoundary>
 
 <style>
   .frame {

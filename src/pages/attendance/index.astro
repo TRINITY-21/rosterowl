@@ -1,19 +1,19 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Faq from '../../components/Faq.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import MoreTools from '../../components/MoreTools.astro';
 import AttendanceApp from '../../components/AttendanceApp.svelte';
-import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+import { toolJsonLd, type FaqEntry } from '../../lib/seo';
 
 const jsonLd = toolJsonLd({
   name: 'RosterOwl Attendance Sheet Generator',
   path: '/attendance/',
   description:
-    'Printable monthly attendance sheet with your students already listed: pick a month and download a one-page register — roster down the side, every school day (Mon–Fri) across the top. Free, no signup — names never leave your browser.',
+    'Printable monthly attendance sheet with your students already listed: pick a month and download a one-page sheet — roster down the side, every school day (Mon–Fri) across the top. Free, no signup — nothing uploaded unless you turn on sync.',
 });
 
-// Mirrors the visible <section class="faq"> below, verbatim.
-const faqLd = faqJsonLd([
+const faqs: FaqEntry[] = [
   {
     q: `What do the blank cells mean?`,
     a: `Whatever you want them to. Mark it your way — ✓ present, A absent, T tardy — it's your system; the sheet just gives you the grid.`,
@@ -26,15 +26,14 @@ const faqLd = faqJsonLd([
     q: `A new student joined — do I redo the sheet?`,
     a: `Add them once to your class list and every future sheet includes them, re-alphabetized automatically. That's the point of the shared roster.`,
   },
-]);
+];
 ---
 
 <Layout
   title="Printable Attendance Sheet — Monthly Grid | RosterOwl"
-  description="Monthly attendance register in one click: your class list down the side, the month's real school days (Mon–Fri) across the top, blank cells for your own marks. One page, numbered, alphabetized. Free, no signup."
+  description="Monthly attendance sheet in one click: your class list down the side, the month's real school days (Mon–Fri) across the top, blank cells for your own marks. One page, numbered, alphabetized. Free, no signup."
 >
   <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
-  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
 
   <main class="tool-page">
     <div class="page-head">
@@ -42,7 +41,7 @@ const faqLd = faqJsonLd([
       <p>
         Pick a month — your students down the side, every school day (Mon–Fri) across the top,
         blank cells for your own marks. One page, numbered, alphabetized. Free · no signup ·
-        <a href="/privacy/">names never leave your browser</a>.
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -60,10 +59,10 @@ const faqLd = faqJsonLd([
           </p>
         </div>
         <div>
-          <h3>A register that looks like a register</h3>
+          <h3>Looks like a real attendance sheet</h3>
           <p>
-            Rows are numbered (headcounts in one glance) and sorted how registers actually work —
-            "Last, First" A→Z — or by first name, or in your roster order.
+            Rows are numbered (headcounts in one glance) and sorted the way attendance sheets
+            actually work — "Last, First" A→Z — or by first name, or in your roster order.
           </p>
         </div>
         <div>
@@ -79,30 +78,7 @@ const faqLd = faqJsonLd([
         </div>
       </div>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>What do the blank cells mean?</summary>
-          <p>
-            Whatever you want them to. Mark it your way — ✓ present, A absent, T tardy — it's
-            your system; the sheet just gives you the grid.
-          </p>
-        </details>
-        <details>
-          <summary>What about holidays in the middle of the month?</summary>
-          <p>
-            Cross them out or leave the column blank — the grid lists every Mon–Fri and doesn't
-            assume anything about your district's calendar.
-          </p>
-        </details>
-        <details>
-          <summary>A new student joined — do I redo the sheet?</summary>
-          <p>
-            Add them once to your class list and every future sheet includes them,
-            re-alphabetized automatically. That's the point of the shared roster.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

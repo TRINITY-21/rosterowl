@@ -1,0 +1,82 @@
+---
+// The reading treatment the four prose pages share — about, privacy, contact,
+// terms. Privacy carried this CSS inline; four copies of it would have drifted
+// the first time one of them was tweaked.
+import Layout from './Layout.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  /** The <h1>. Usually shorter than the SEO title. */
+  heading: string;
+  /** Standfirst under the heading. */
+  lede?: string;
+}
+const { title, description, heading, lede } = Astro.props;
+---
+
+<Layout {title} {description}>
+  <main>
+    <h1>{heading}</h1>
+    {lede && <p class="lede" set:html={lede} />}
+    <slot />
+  </main>
+  <SiteFooter />
+</Layout>
+
+<style>
+  main {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: var(--space-5) var(--page-gutter) var(--space-8);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+    letter-spacing: -0.015em;
+  }
+  .lede {
+    font-size: var(--text-lg);
+    color: var(--muted);
+  }
+  .lede :global(strong) {
+    color: var(--ink);
+  }
+  main :global(h2) {
+    font-size: var(--text-xl);
+    margin-top: var(--space-6);
+  }
+  main :global(h3) {
+    font-size: var(--text-base);
+    margin-top: var(--space-5);
+  }
+  main :global(p),
+  main :global(ul),
+  main :global(ol),
+  main :global(dl) {
+    color: var(--muted);
+  }
+  main :global(ul),
+  main :global(ol) {
+    padding-left: 1.3rem;
+  }
+  main :global(li) {
+    margin: var(--space-2) 0;
+  }
+  main :global(li strong),
+  main :global(p strong) {
+    color: var(--ink);
+  }
+  /* A quiet aside — the "in one sentence" boxes the trust pages lean on. */
+  main :global(.callout) {
+    margin-top: var(--space-5);
+    padding: var(--space-4);
+    border: var(--rule);
+    border-left: 3px solid var(--brand);
+    border-radius: var(--radius-s);
+    background: var(--surface);
+  }
+  main :global(.callout p) {
+    margin: 0;
+  }
+</style>

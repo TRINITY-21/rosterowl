@@ -14,8 +14,9 @@ const { heading = 'One roster, every other tool' } = Astro.props;
 const pathname = Astro.url.pathname;
 const current = activeToolHref(pathname);
 const others = ALL_TOOLS.filter((t) => t.href !== current);
-// The seating pages already cross-link their own variants in body copy.
-const showVariants = current !== '/seating-chart/';
+// The seating pages already cross-link their own variants in body copy, and
+// /printables/ has its own "looking for a seating chart?" note.
+const showVariants = current !== '/seating-chart/' && !pathname.startsWith('/printables');
 ---
 
 <section class="more-tools" aria-labelledby="more-tools-heading">
@@ -23,7 +24,7 @@ const showVariants = current !== '/seating-chart/';
     <h2 id="more-tools-heading">{heading}</h2>
     <p>
       Your class list is already saved in this browser — every tool below picks it up, with no
-      names retyped and nothing uploaded.
+      names retyped and nothing uploaded unless you turn on sync.
     </p>
   </div>
 

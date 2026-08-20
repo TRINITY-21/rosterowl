@@ -1,5 +1,7 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
+import Faq from '../../../components/Faq.astro';
+import type { FaqEntry } from '../../../lib/seo';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MoreTools from '../../../components/MoreTools.astro';
@@ -13,13 +15,28 @@ const jsonLd = {
   operatingSystem: 'Any (web browser)',
   url: 'https://rosterowl.com/seating-chart/keep-students-apart/',
   description:
-    'Seating chart generator with keep-apart rules: mark any two students and every shuffle seats them away from each other. Free, no signup, names never leave your browser.',
+    'Seating chart maker with keep-apart rules: mark any two students and every shuffle seats them away from each other. Free, no signup, nothing uploaded unless you turn on sync.',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
 };
+
+const faqs: FaqEntry[] = [
+  {
+    q: `How many keep-apart pairs can I set?`,
+    a: `As many as you need — though every pair shrinks the number of valid arrangements. If you over-constrain, the warning tells you exactly which rule couldn't be satisfied.`,
+  },
+  {
+    q: `Can a student be in several rules at once?`,
+    a: `Yes — apart from two classmates, together with a third, pinned near the teacher, all at once. The shuffle juggles all of it.`,
+  },
+  {
+    q: `Do rules apply to group work too?`,
+    a: `Yes — the <a href="/group-maker/">group maker</a> reads the same rules, so keep-apart pairs land in different groups automatically.`,
+  },
+];
 ---
 
 <Layout
-  title="Seating Chart Generator to Keep Students Apart | RosterOwl"
+  title="Seating Chart Maker to Keep Students Apart | RosterOwl"
   description="Mark any two students 'keep apart' and every shuffle seats them away from each other — plus keep-together pairs, priority seating zones, and locked seats. The sample class below already has a rule set so you can see it work. Free, no signup."
 >
   <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
@@ -33,11 +50,11 @@ const jsonLd = {
       ]}
     />
     <div class="page-head">
-      <h1>Seating chart generator that keeps students apart</h1>
+      <h1>Seating chart maker that keeps students apart</h1>
       <p>
         The sample class below already has a keep-apart rule — hit <strong>Shuffle</strong> a few
         times and watch it hold. Free · no signup ·
-        <a href="/privacy/">names never leave your browser</a>.
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -72,30 +89,7 @@ const jsonLd = {
         nothing.
       </p>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>How many keep-apart pairs can I set?</summary>
-          <p>
-            As many as you need — though every pair shrinks the number of valid arrangements. If
-            you over-constrain, the warning tells you exactly which rule couldn't be satisfied.
-          </p>
-        </details>
-        <details>
-          <summary>Can a student be in several rules at once?</summary>
-          <p>
-            Yes — apart from two classmates, together with a third, pinned near the teacher, all
-            at once. The shuffle juggles all of it.
-          </p>
-        </details>
-        <details>
-          <summary>Do rules apply to group work too?</summary>
-          <p>
-            Yes — the <a href="/group-maker/">group maker</a> reads the same rules, so keep-apart
-            pairs land in different groups automatically.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

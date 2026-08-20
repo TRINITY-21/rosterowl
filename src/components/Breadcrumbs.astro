@@ -1,6 +1,8 @@
 ---
 // Orientation for the seating-chart variant pages, which otherwise give no clue
 // that they sit under the main tool. Emits BreadcrumbList structured data too.
+import { SITE_URL } from '../lib/seo';
+
 interface Crumb {
   label: string;
   href?: string;
@@ -10,7 +12,6 @@ interface Props {
 }
 const { trail } = Astro.props;
 
-const site = 'https://rosterowl.com';
 const jsonLd = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
@@ -18,7 +19,7 @@ const jsonLd = JSON.stringify({
     '@type': 'ListItem',
     position: i + 1,
     name: c.label,
-    ...(c.href ? { item: `${site}${c.href}` } : {}),
+    ...(c.href ? { item: `${SITE_URL}${c.href}` } : {}),
   })),
 });
 ---

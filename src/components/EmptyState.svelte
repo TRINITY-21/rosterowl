@@ -9,7 +9,7 @@
     onaction,
     href,
     /** Icon shown above the title. Set to null for a bare empty state. */
-    icon = 'info',
+    icon = 'users',
     /**
      * Heading level to render. Defaults to 2; pass 3 when this sits inside a
      * section that already owns an h2, so heading order stays legal.
@@ -41,7 +41,7 @@
   {#if href && actionLabel}
     <a class="btn primary" href={href}>{actionLabel}</a>
   {:else if actionLabel}
-    <button class="btn primary" onclick={onaction}>{actionLabel}</button>
+    <button class="btn primary" type="button" onclick={onaction}>{actionLabel}</button>
   {/if}
 </div>
 

@@ -176,7 +176,7 @@ export const BLANKS: BlankSpec[] = [
   {
     key: 'bingo',
     label: 'Bingo cards (5×5)',
-    hint: 'Four blank grids with a free centre, ready to fill in',
+    hint: 'Four blank grids with a free center, ready to fill in',
     toolHref: '/bingo/',
     toolLabel: 'bingo card maker',
     filename: 'Blank bingo cards',

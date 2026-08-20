@@ -1,12 +1,18 @@
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
+  import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import SampleBanner from './SampleBanner.svelte';
+  import { rosterStamp } from '../lib/names';
   import { AWARD_PRESETS } from '../lib/presets';
-  import Icon from './Icon.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { certsPdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -25,25 +31,15 @@
   let inkSaver = $state(false);
   let showFooter = $state(true);
 
-  let previewUrl = $state('');
+  const preview = createPdfPreview();
   let generating = $state(true);
   let error = $state('');
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const canPreview =
-    typeof navigator === 'undefined' || (navigator as Navigator).pdfViewerEnabled !== false;
 
   const cls = $derived(app.activeClass);
-
-
   // Preview must follow roster edits (including from another tab), or the
-
   // on-screen PDF and the downloaded file disagree.
-
-  const rosterKey = $derived(
-
-    (cls?.students ?? []).map((s) => `${s.first} ${s.last}|${s.absent}`).join('\0')
-
-  );
+  const rosterKey = $derived(rosterStamp(cls?.students));
   const effectiveAward = $derived(award === '__custom__' ? customAward || 'Award' : award);
   const recipientCount = $derived(
     (cls?.students ?? []).filter((s) => !(skipAbsent && s.absent)).length
@@ -70,8 +66,7 @@
       return null;
     }
     if (recipientCount === 0) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = '';
+      preview.clear();
       error = '';
       generating = false;
       return null;
@@ -91,11 +86,7 @@
         ? c.students.filter((s) => !(skipAbsent && s.absent)).slice(0, 1)
         : c.students;
       const { bytes } = await renderCertificatesPdf(students, opts(), fonts);
-      if (previewOnly && canPreview) {
-        const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = url;
-      }
+      if (previewOnly) preview.show(bytes);
       return bytes;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not build the PDF';
@@ -115,40 +106,35 @@
     };
   });
 
-  $effect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  });
 
-  async function download() {
-    if (recipientCount === 0) return;
+  // Rebuilt on demand rather than reusing the preview's bytes, so an option
+  // changed while the preview was still rendering cannot ship a stale sheet.
+  async function buildPdf(): Promise<Uint8Array> {
     const bytes = await generate(false);
-    if (!bytes) return;
-    const { certsPdfFilename } = await import('../lib/pdfCerts');
-    const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = certsPdfFilename(cls?.name ?? 'Class', effectiveAward);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    app.toast(`${recipientCount} certificates saved as one PDF`, 'ok');
+    if (!bytes) throw new Error(error || 'Could not build the PDF');
+    return bytes;
   }
 
+  const filename = $derived(certsPdfFilename(cls?.name || 'Class', effectiveAward));
+
 </script>
+<ToolBoundary tool="certificate maker">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Preview the certificate, then switch to your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Preview the certificate, then switch to your own roster.
+    </SampleBanner>
   {/if}
 
   {#if !cls || cls.students.length === 0}
@@ -165,10 +151,10 @@
          here rather than in the options panel so there is only one such message. -->
     {#snippet noRecipients()}
       <div class="print-msg">
-        <p><strong>No one left to certify.</strong></p>
+        <p><strong>No certificates to print.</strong></p>
         <p>
           Every student in {cls.name} is marked absent and “Skip students marked absent” is on.
-          Untick it to include everyone, or update attendance first.
+          Uncheck it to include everyone, or update attendance first.
         </p>
         <a class="btn small" href="/seating-chart/">Update attendance</a>
       </div>
@@ -229,22 +215,26 @@
             your roster.
           </p>
         {/if}
-        <button class="btn primary" onclick={() => download()} disabled={generating || !!error || recipientCount === 0}>
-          <Icon name="download" size={16} />
-          {generating ? 'Preparing preview…' : `Download ${recipientCount} certificates`}
-        </button>
+        <ShareActions
+          getBytes={buildPdf}
+          downloadLabel={`Download ${recipientCount} certificates`}
+          {filename}
+          label="certificates"
+          disabled={generating || !!error || recipientCount === 0}
+          onerror={(e) => (error = e instanceof Error ? e.message : 'Could not build the PDF')}
+        />
       </div>
       <div class="preview-col">
         <PdfPreview
           label="certificate"
-          {previewUrl}
+          previewUrl={preview.url}
           {generating}
           {error}
-          {canPreview}
+          canPreview={preview.canPreview}
           onretry={() => generate(true)}
           blocked={recipientCount === 0 ? noRecipients : undefined}
         />
-        {#if recipientCount > 0 && !error && canPreview}
+        {#if recipientCount > 0 && !error && preview.canPreview}
           <p class="print-note">
             Preview shows the first certificate — the download has one per student.
           </p>
@@ -258,6 +248,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   /* The preview column stacks the PDF pane over its caption; min-width:0 keeps

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# A newer push makes an in-flight run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Typecheck, 234 unit tests, and the production build — which is also what
+      # regenerates dist/_headers for the CSP smoke test below.
+      - run: npm run verify
+
+      # `channel: chromium` in the smoke drivers wants the full build, not the
+      # headless shell. webkit is here for tests/smoke-webkit.mjs.
+      - run: npx playwright install --with-deps chromium webkit
+
+      - run: node tests/run-browser-ci.mjs
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshots
+          path: /tmp/rosterowl-shots
+          if-no-files-found: ignore
+          retention-days: 7

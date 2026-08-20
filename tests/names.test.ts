@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { displayNames } from '../src/lib/names';
+import { displayNames, nameStamp, rosterStamp } from '../src/lib/names';
 import type { Student } from '../src/lib/types';
 
 let n = 0;
@@ -85,5 +85,24 @@ describe('displayNames', () => {
 
   it('handles an empty roster', () => {
     expect(displayNames([]).size).toBe(0);
+  });
+});
+
+describe('rosterStamp / nameStamp', () => {
+  it('changes when a name or absent flag changes', () => {
+    const a = student('Maya', 'Larsen');
+    const b = student('Omar', 'Reyes');
+    const first = rosterStamp([a, b]);
+    expect(rosterStamp([a, b])).toBe(first);
+    expect(rosterStamp([a, { ...b, absent: true }])).not.toBe(first);
+    expect(rosterStamp([a, { ...b, first: 'Omarito' }])).not.toBe(first);
+    expect(rosterStamp(undefined)).toBe('');
+  });
+
+  it('nameStamp ignores absent flags', () => {
+    const a = student('Maya', 'Larsen');
+    a.absent = true;
+    expect(nameStamp([a])).toBe(nameStamp([{ ...a, absent: false }]));
+    expect(nameStamp([a])).toBe('Maya Larsen');
   });
 });

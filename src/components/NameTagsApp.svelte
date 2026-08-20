@@ -1,12 +1,18 @@
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
+  import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import type { TagStyle } from '../lib/pdfNameTags';
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
-  import Icon from './Icon.svelte';
+  import SampleBanner from './SampleBanner.svelte';
+  import { rosterStamp } from '../lib/names';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { nameTagsPdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -19,26 +25,16 @@
   let inkSaver = $state(false);
   let showCutLines = $state(true);
 
-  let previewUrl = $state('');
+  const preview = createPdfPreview();
   let generating = $state(true);
   let error = $state('');
   let pages = $state(0);
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const canPreview =
-    typeof navigator === 'undefined' || (navigator as Navigator).pdfViewerEnabled !== false;
 
   const cls = $derived(app.activeClass);
-
-
   // Preview must follow roster edits (including from another tab), or the
-
   // on-screen PDF and the downloaded file disagree.
-
-  const rosterKey = $derived(
-
-    (cls?.students ?? []).map((s) => `${s.first} ${s.last}|${s.absent}`).join('\0')
-
-  );
+  const rosterKey = $derived(rosterStamp(cls?.students));
   const tagCount = $derived(
     (cls?.students ?? []).filter((s) => !(skipAbsent && s.absent)).length
   );
@@ -66,8 +62,7 @@
       return null;
     }
     if (tagCount === 0) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = '';
+      preview.clear();
       error = '';
       pages = 0;
       generating = false;
@@ -83,13 +78,7 @@
       const fonts = await loadCertFonts();
       const result = await renderNameTagsPdf(c.students, opts(), fonts);
       pages = result.pages;
-      if (canPreview) {
-        const url = URL.createObjectURL(
-          new Blob([result.bytes.slice().buffer], { type: 'application/pdf' })
-        );
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = url;
-      }
+      preview.show(result.bytes);
       return result.bytes;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not build the PDF';
@@ -109,40 +98,35 @@
     };
   });
 
-  $effect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  });
 
-  async function download() {
-    if (tagCount === 0) return;
+  // Rebuilt on demand rather than reusing the preview's bytes, so an option
+  // changed while the preview was still rendering cannot ship a stale sheet.
+  async function buildPdf(): Promise<Uint8Array> {
     const bytes = await generate();
-    if (!bytes) return;
-    const { nameTagsPdfFilename } = await import('../lib/pdfNameTags');
-    const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = nameTagsPdfFilename(cls?.name ?? 'Class', style);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    app.toast(`${tagCount} ${tagWord} saved as one PDF`, 'ok');
+    if (!bytes) throw new Error(error || 'Could not build the PDF');
+    return bytes;
   }
 
+  const filename = $derived(nameTagsPdfFilename(cls?.name || 'Class', style));
+
 </script>
+<ToolBoundary tool="name tag maker">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Preview the sheet, then replace it with your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Preview the sheet, then replace it with your own roster.
+    </SampleBanner>
   {/if}
 
   {#if !cls || cls.students.length === 0}
@@ -162,7 +146,7 @@
         <p><strong>No tags to print.</strong></p>
         <p>
           Every student in {cls.name} is marked absent and “Skip students marked absent” is on.
-          Untick it to print a tag for the whole class, or update attendance first.
+          Uncheck it to print a tag for the whole class, or update attendance first.
         </p>
         <a class="btn small" href="/seating-chart/">Update attendance</a>
       </div>
@@ -209,21 +193,21 @@
             {tagCount} {tagWord}, {perSheet}. {pageNote}
           </p>
         {/if}
-        <button
-          class="btn primary"
-          onclick={() => download()}
+        <ShareActions
+          getBytes={buildPdf}
+          downloadLabel={`Download ${tagCount} ${tagWord}`}
+          {filename}
+          label="name tags"
           disabled={generating || !!error || tagCount === 0}
-        >
-          <Icon name="download" size={16} />
-          {generating ? 'Preparing preview…' : `Download ${tagCount} ${tagWord}`}
-        </button>
+          onerror={(e) => (error = e instanceof Error ? e.message : 'Could not build the PDF')}
+        />
       </div>
       <PdfPreview
         label={style === 'desk-plate' ? 'desk plate' : 'name tag'}
-        {previewUrl}
+        previewUrl={preview.url}
         {generating}
         {error}
-        {canPreview}
+        canPreview={preview.canPreview}
         onretry={() => generate()}
         portrait={isPortrait}
         blocked={tagCount === 0 ? noTags : undefined}
@@ -236,3 +220,4 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>

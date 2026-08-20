@@ -2,14 +2,20 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app } from '../lib/appState.svelte';
+  import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import { displayNames } from '../lib/names';
   import type { CardSize, ItemMode } from '../lib/pdfFlashcards';
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import SampleBanner from './SampleBanner.svelte';
   import Icon from './Icon.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { flashcardsPdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -26,13 +32,11 @@
 
   let wordListEl = $state<HTMLTextAreaElement | null>(null);
 
-  let previewUrl = $state('');
+  const preview = createPdfPreview();
   let generating = $state(true);
   let error = $state('');
   let pages = $state(0);
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const canPreview =
-    typeof navigator === 'undefined' || (navigator as Navigator).pdfViewerEnabled !== false;
 
   const cls = $derived(app.activeClass);
 
@@ -89,8 +93,7 @@
       return null;
     }
     if (items.length === 0) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = '';
+      preview.clear();
       error = '';
       pages = 0;
       generating = false;
@@ -106,13 +109,7 @@
       const fonts = await loadCertFonts();
       const result = await renderFlashcardsPdf(items, opts(), fonts);
       pages = result.pages;
-      if (canPreview) {
-        const url = URL.createObjectURL(
-          new Blob([result.bytes.slice().buffer], { type: 'application/pdf' })
-        );
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = url;
-      }
+      preview.show(result.bytes);
       return result.bytes;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not build the PDF';
@@ -132,40 +129,35 @@
     };
   });
 
-  $effect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  });
 
-  async function download() {
-    if (items.length === 0) return;
+  // Rebuilt on demand rather than reusing the preview's bytes, so an option
+  // changed while the preview was still rendering cannot ship a stale sheet.
+  async function buildPdf(): Promise<Uint8Array> {
     const bytes = await generate();
-    if (!bytes) return;
-    const { flashcardsPdfFilename } = await import('../lib/pdfFlashcards');
-    const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = flashcardsPdfFilename(cls?.name ?? 'Class', mode);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    app.toast(`${items.length} cards saved as one PDF`, 'ok');
+    if (!bytes) throw new Error(error || 'Could not build the PDF');
+    return bytes;
   }
 
+  const filename = $derived(flashcardsPdfFilename(cls?.name || 'Class', mode));
+
 </script>
+<ToolBoundary tool="flashcard maker">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Preview the card set, then replace it with your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Preview the card set, then replace it with your own roster.
+    </SampleBanner>
   {/if}
 
   {#if !cls}
@@ -193,11 +185,11 @@
           actionLabel="Paste your class list"
           onaction={() => (pasteMode = 'new')}
         >
-          Name cards are built from your roster, spelled exactly as you typed it. Paste the list
+          Name cards are built from your roster, spelled exactly as you typed them. Paste the list
           once, or set “Cards from” to your own word list instead.
         </EmptyState>
       {:else}
-        <EmptyState compact title="Everyone is marked absent" href="/seating-chart/" actionLabel="Review attendance">
+        <EmptyState compact icon="alert" title="Everyone is marked absent" href="/seating-chart/" actionLabel="Review attendance">
           “Skip students marked absent” is on and nobody is left to print. Turn it off above, or
           update today's attendance first.
         </EmptyState>
@@ -286,21 +278,21 @@
             <span>Everyone is marked absent — no cards to print.</span>
           </p>
         {/if}
-        <button
-          class="btn primary"
-          onclick={() => download()}
+        <ShareActions
+          getBytes={buildPdf}
+          downloadLabel={`Download ${items.length} cards`}
+          {filename}
+          label="flashcards"
           disabled={generating || !!error || items.length === 0}
-        >
-          <Icon name="download" size={16} />
-          {generating ? 'Preparing preview…' : `Download ${items.length} cards`}
-        </button>
+          onerror={(e) => (error = e instanceof Error ? e.message : 'Could not build the PDF')}
+        />
       </div>
       <PdfPreview
         label="flashcard"
-        {previewUrl}
+        previewUrl={preview.url}
         {generating}
         {error}
-        {canPreview}
+        canPreview={preview.canPreview}
         onretry={() => generate()}
         portrait={portraitSheet}
         blocked={items.length === 0 ? nothingToPrint : undefined}
@@ -313,6 +305,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   /* rows="8" sets the height; the floor keeps it usable if the rows hint is ignored.

@@ -2,15 +2,21 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app } from '../lib/appState.svelte';
+  import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import type { BingoSize } from '../lib/pdfBingo';
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import PresetPicker from './PresetPicker.svelte';
+  import SampleBanner from './SampleBanner.svelte';
   import { WORD_LIST_PRESETS } from '../lib/presets';
   import Icon from './Icon.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { bingoPdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -41,13 +47,11 @@
   let showFooter = $state(true);
   let seed = $state(newSeed());
 
-  let previewUrl = $state('');
+  const preview = createPdfPreview();
   let generating = $state(true);
   let error = $state('');
   let pages = $state(0);
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const canPreview =
-    typeof navigator === 'undefined' || (navigator as Navigator).pdfViewerEnabled !== false;
 
   const cls = $derived(app.activeClass);
 
@@ -119,8 +123,7 @@
       return null;
     }
     if (!poolOk) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = '';
+      preview.clear();
       error = '';
       pages = 0;
       generating = false;
@@ -151,13 +154,7 @@
         fonts
       );
       pages = result.pages;
-      if (canPreview) {
-        const url = URL.createObjectURL(
-          new Blob([result.bytes.slice().buffer], { type: 'application/pdf' })
-        );
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = url;
-      }
+      preview.show(result.bytes);
       return result.bytes;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not build the PDF';
@@ -177,40 +174,35 @@
     };
   });
 
-  $effect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  });
 
-  async function download() {
-    if (!poolOk) return;
+  // Rebuilt on demand rather than reusing the preview's bytes, so an option
+  // changed while the preview was still rendering cannot ship a stale sheet.
+  async function buildPdf(): Promise<Uint8Array> {
     const bytes = await generate();
-    if (!bytes) return;
-    const { bingoPdfFilename } = await import('../lib/pdfBingo');
-    const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = bingoPdfFilename(cls?.name ?? 'Class');
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    app.toast(`${cardCount} bingo card${cardCount === 1 ? '' : 's'} saved as one PDF`, 'ok');
+    if (!bytes) throw new Error(error || 'Could not build the PDF');
+    return bytes;
   }
 
+  const filename = $derived(bingoPdfFilename(cls?.name || 'Class'));
+
 </script>
+<ToolBoundary tool="bingo card maker">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Preview the cards, then replace it with your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Preview the cards, then replace it with your own roster.
+    </SampleBanner>
   {/if}
 
   {#if !cls || cls.students.length === 0}
@@ -292,7 +284,7 @@
         </label>
         <label class="print-check">
           <input type="checkbox" bind:checked={callerList} />
-          Caller's list page (numbered tick-boxes)
+          Caller's list page (numbered checkboxes)
         </label>
         <label class="print-check">
           <input type="checkbox" bind:checked={inkSaver} />
@@ -317,14 +309,14 @@
             {generating ? '…' : pages} page{pages === 1 && !generating ? '' : 's'}, one PDF.
           </p>
         {/if}
-        <button
-          class="btn primary"
-          onclick={() => download()}
+        <ShareActions
+          getBytes={buildPdf}
+          downloadLabel={`Download ${cardCount} bingo card${cardCount === 1 ? '' : 's'}`}
+          {filename}
+          label="bingo cards"
           disabled={generating || !!error || !poolOk}
-        >
-          <Icon name="download" size={16} />
-          {generating ? 'Preparing preview…' : `Download ${cardCount} bingo card${cardCount === 1 ? '' : 's'}`}
-        </button>
+          onerror={(e) => (error = e instanceof Error ? e.message : 'Could not build the PDF')}
+        />
       </div>
       <!-- Nothing can be rendered until the pool is big enough — say by how much,
            and give the one action that fixes it. Passed only while it applies. -->
@@ -339,10 +331,10 @@
       {/snippet}
       <PdfPreview
         label="bingo card"
-        {previewUrl}
+        previewUrl={preview.url}
         {generating}
         {error}
-        {canPreview}
+        canPreview={preview.canPreview}
         onretry={() => generate()}
         blocked={poolOk ? undefined : poolTooSmall}
         portrait
@@ -355,6 +347,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   /* The word list is body copy, not a label: it must not inherit the bold,

@@ -1,0 +1,39 @@
+---
+// The "Questions teachers ask" block every tool page ends its copy with, and
+// the FAQPage structured data that mirrors it.
+//
+// Both used to be written out by hand on each page: an entries array passed to
+// faqJsonLd() in the frontmatter, then the same questions and answers typed
+// again as <details> markup below, with a comment on every page reminding the
+// next editor to keep the two verbatim. Ten pages of that is a drift waiting to
+// happen — a reworded answer that Google keeps serving in its old form is the
+// kind of bug nobody sees. One array now feeds both, the way Breadcrumbs.astro
+// already emits its own BreadcrumbList.
+//
+// `a` may carry inline emphasis (<em>, <strong>, <a>); faqJsonLd strips tags for
+// the structured data, which wants plain text.
+//
+// `name="faq"` makes the group an exclusive accordion: opening one answer
+// closes the others, so a teacher skimming never ends up with five panels open.
+import { faqJsonLd, type FaqEntry } from '../lib/seo';
+
+interface Props {
+  entries: FaqEntry[];
+  /** Heading override, for pages where "teachers" reads oddly. */
+  heading?: string;
+}
+const { entries, heading = 'Questions teachers ask' } = Astro.props;
+---
+
+<section class="faq">
+  <h2>{heading}</h2>
+  {
+    entries.map((entry) => (
+      <details name="faq">
+        <summary>{entry.q}</summary>
+        <p set:html={entry.a} />
+      </details>
+    ))
+  }
+</section>
+<script is:inline type="application/ld+json" set:html={faqJsonLd(entries)} />

@@ -3,6 +3,20 @@
 import type { Id, Student } from './types';
 
 /**
+ * Cheap identity of a roster for preview invalidation. Two stamps compare equal
+ * only when the names and absent flags match, in order — enough to know the
+ * on-screen PDF is stale without depending on object identity across tabs.
+ */
+export function rosterStamp(students: readonly Student[] | undefined): string {
+  return (students ?? []).map((s) => `${s.first} ${s.last}|${s.absent}`).join('\0');
+}
+
+/** Names only — for tools that always list everyone (attendance registers). */
+export function nameStamp(students: readonly Student[] | undefined): string {
+  return (students ?? []).map((s) => `${s.first} ${s.last}`.trim()).join('\0');
+}
+
+/**
  * Unique first name -> "First". Duplicate firsts -> "First L.", extending the
  * last-name prefix letter by letter until unique, or the full "First Last" if
  * never unique. Students without a last name stay "First". Comparison is

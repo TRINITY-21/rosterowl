@@ -1,5 +1,7 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
+import Faq from '../../../components/Faq.astro';
+import type { FaqEntry } from '../../../lib/seo';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MoreTools from '../../../components/MoreTools.astro';
@@ -17,6 +19,21 @@ const jsonLd = {
     'Seating chart maker pre-set to table groups of 4: assign your class to tables, keep chatty students at different tables, and print a one-page chart. Free, no signup.',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
 };
+
+const faqs: FaqEntry[] = [
+  {
+    q: `Can I mix tables of 4 with a few pairs or single desks?`,
+    a: `Yes — switch to arrange mode and add pairs or single desks anywhere. Real rooms are mixed; the template is just a starting point.`,
+  },
+  {
+    q: `Can it balance groups by ability or behavior?`,
+    a: `RosterOwl deliberately doesn't store ability or behavior data (that stays in your head, where it's private). What it gives you: keep-apart, keep-together, priority seating zones, locks — and instant reshuffles until the mix looks right to you.`,
+  },
+  {
+    q: `Does the printed chart show my rules?`,
+    a: `Never. Printed charts show names only — safe to hang on the wall or hand a substitute.`,
+  },
+];
 ---
 
 <Layout
@@ -39,7 +56,7 @@ const jsonLd = {
         Pre-set to six tables of four below. Paste your class list, drag tables to match your
         room, and shuffle — students you mark "keep apart" land at <em>different tables</em>, not
         just different chairs. Free · no signup ·
-        <a href="/privacy/">names never leave your browser</a>.
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -70,30 +87,7 @@ const jsonLd = {
         <a href="/seating-chart/templates/">every layout</a>.</span>
       </p>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>Can I mix tables of 4 with a few pairs or single desks?</summary>
-          <p>
-            Yes — switch to arrange mode and add pairs or single desks anywhere. Real rooms are
-            mixed; the template is just a starting point.
-          </p>
-        </details>
-        <details>
-          <summary>Can it balance groups by ability or behavior?</summary>
-          <p>
-            RosterOwl deliberately doesn't store ability or behavior data (that stays in your
-            head, where it's private). What it gives you: keep-apart, keep-together, priority
-            seating zones, locks — and instant reshuffles until the mix looks right to you.
-          </p>
-        </details>
-        <details>
-          <summary>Does the printed chart show my rules?</summary>
-          <p>
-            Never. Printed charts show names only — safe to hang on the wall or hand a substitute.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

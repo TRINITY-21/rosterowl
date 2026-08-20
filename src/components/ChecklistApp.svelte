@@ -1,15 +1,22 @@
 <!-- RosterOwl class checklist tool -->
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
+  import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import type { NameOrder } from '../lib/pdfChecklist';
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import SampleBanner from './SampleBanner.svelte';
+  import { rosterStamp } from '../lib/names';
   import PresetPicker from './PresetPicker.svelte';
   import { CHECKLIST_PRESETS } from '../lib/presets';
   import Icon from './Icon.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { checklistPdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -23,25 +30,15 @@
   let inkSaver = $state(false);
   let showFooter = $state(true);
 
-  let previewUrl = $state('');
+  const preview = createPdfPreview();
   let generating = $state(true);
   let error = $state('');
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const canPreview =
-    typeof navigator === 'undefined' || (navigator as Navigator).pdfViewerEnabled !== false;
 
   const cls = $derived(app.activeClass);
-
-
   // Preview must follow roster edits (including from another tab), or the
-
   // on-screen PDF and the downloaded file disagree.
-
-  const rosterKey = $derived(
-
-    (cls?.students ?? []).map((s) => `${s.first} ${s.last}|${s.absent}`).join('\0')
-
-  );
+  const rosterKey = $derived(rosterStamp(cls?.students));
   const rowCount = $derived(
     (cls?.students ?? []).filter((s) => includeAbsent || !s.absent).length
   );
@@ -84,8 +81,7 @@
       return null;
     }
     if (rowCount === 0) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = '';
+      preview.clear();
       error = '';
       generating = false;
       return null;
@@ -99,11 +95,7 @@
       ]);
       const fonts = await loadPdfFonts();
       const { bytes } = await renderChecklistPdf(c.students, opts(), fonts);
-      if (canPreview) {
-        const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = url;
-      }
+      preview.show(bytes);
       return bytes;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not build the PDF';
@@ -123,40 +115,35 @@
     };
   });
 
-  $effect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  });
 
-  async function download() {
-    if (rowCount === 0) return;
+  // Rebuilt on demand rather than reusing the preview's bytes, so an option
+  // changed while the preview was still rendering cannot ship a stale sheet.
+  async function buildPdf(): Promise<Uint8Array> {
     const bytes = await generate();
-    if (!bytes) return;
-    const { checklistPdfFilename } = await import('../lib/pdfChecklist');
-    const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = checklistPdfFilename(cls?.name ?? 'Class', title);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    app.toast('Checklist saved to your downloads', 'ok');
+    if (!bytes) throw new Error(error || 'Could not build the PDF');
+    return bytes;
   }
 
+  const filename = $derived(checklistPdfFilename(cls?.name || 'Class', title));
+
 </script>
+<ToolBoundary tool="checklist maker">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Build a checklist, then replace it with your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Build a checklist, then replace it with your own roster.
+    </SampleBanner>
   {/if}
 
   {#if !cls || cls.students.length === 0}
@@ -260,40 +247,36 @@
             {columns.length === 1 ? 'column' : 'columns'} — numbered, always one page.
           </p>
         {/if}
-        <button class="btn primary" onclick={() => download()} disabled={generating || !!error || rowCount === 0}>
-          <Icon name="download" size={16} />
-          {generating ? 'Preparing preview…' : 'Download checklist'}
-        </button>
+        <ShareActions
+          getBytes={buildPdf}
+          downloadLabel="Download checklist"
+          {filename}
+          label="checklist"
+          disabled={generating || !!error || rowCount === 0}
+          onerror={(e) => (error = e instanceof Error ? e.message : 'Could not build the PDF')}
+        />
       </div>
 
-      {#if rowCount === 0}
-        <PdfPreview
-          label="checklist"
-          {previewUrl}
-          {generating}
-          {error}
-          {canPreview}
-          onretry={() => generate()}
-          portrait={orientation === 'portrait'}
-        >
-          {#snippet blocked()}
-            <EmptyState compact title="Nothing to print yet" href="/seating-chart/" actionLabel="Review attendance">
-              Every student in {cls?.name ?? 'this class'} is marked absent, so the checklist has no rows. Tick
-              “Include students marked absent” above to print the whole class, or fix attendance first.
-            </EmptyState>
-          {/snippet}
-        </PdfPreview>
-      {:else}
-        <PdfPreview
-          label="checklist"
-          {previewUrl}
-          {generating}
-          {error}
-          {canPreview}
-          onretry={() => generate()}
-          portrait={orientation === 'portrait'}
-        />
-      {/if}
+      <!-- One instance, handed the blocked snippet only when there is nothing
+           to print. The two branches this replaced were identical but for that
+           snippet, which is six props each waiting to be changed in one copy. -->
+      <PdfPreview
+        label="checklist"
+        previewUrl={preview.url}
+        {generating}
+        {error}
+        canPreview={preview.canPreview}
+        onretry={() => generate()}
+        portrait={orientation === 'portrait'}
+        blocked={rowCount === 0 ? allAbsent : undefined}
+      />
+
+      {#snippet allAbsent()}
+        <EmptyState compact icon="alert" title="Nothing to print yet" href="/seating-chart/" actionLabel="Review attendance">
+          Every student in {cls?.name ?? 'this class'} is marked absent, so the checklist has no rows. Check
+          “Include students marked absent” above to print the whole class, or fix attendance first.
+        </EmptyState>
+      {/snippet}
     </div>
   {/if}
 </div>
@@ -302,6 +285,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   /* Column headers read as one labelled group, not a loose row of inputs. */

@@ -5,7 +5,8 @@ const page = await (await browser.newContext({ viewport: { width: 1440, height: 
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 
-await page.goto('http://localhost:4321/seating-chart/', { waitUntil: 'networkidle' });
+const base = process.env.BASE_URL ?? 'http://localhost:4321';
+await page.goto(base + '/seating-chart/', { waitUntil: 'networkidle' });
 await page.waitForSelector('[data-desk-id]');
 await page.getByRole('button', { name: /download pdf/i }).first().click();
 await page.waitForSelector('object[type="application/pdf"], .err', { timeout: 20000 });

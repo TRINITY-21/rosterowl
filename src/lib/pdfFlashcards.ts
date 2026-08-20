@@ -12,7 +12,6 @@ import fontkit from '@pdf-lib/fontkit';
 import { cellRect, drawCutLines } from './imposition';
 import type { CellRect, GridSpec } from './imposition';
 import type { CertFonts } from './pdfCerts';
-import { safeFilename } from './filenames';
 
 /** jumbo = 2/page landscape halves · large = 4/page quarters · small = 8/page eighths. */
 export type CardSize = 'jumbo' | 'large' | 'small';
@@ -261,7 +260,6 @@ export async function renderFlashcardsPdf(
   return { bytes: await doc.save(), count: items.length, pages };
 }
 
-export function flashcardsPdfFilename(className: string, mode: ItemMode): string {
-  const cls = safeFilename(className);
-  return `${cls} — ${mode === 'names' ? 'Name cards' : 'Flashcards'}.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { flashcardsPdfFilename } from "./filenames";

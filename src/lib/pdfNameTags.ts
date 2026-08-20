@@ -8,10 +8,10 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import type { Color, PDFFont, PDFPage } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { cellRect, drawCutLines } from './imposition';
+import { uniformSize } from './pdfText';
 import type { CellRect, GridSpec } from './imposition';
 import type { Student } from './types';
 import type { CertFonts } from './pdfCerts';
-import { safeFilename } from './filenames';
 
 export type TagStyle = 'desk-plate' | 'badge-8up';
 
@@ -119,6 +119,12 @@ function drawCenteredIn(page: PDFPage, rect: CellRect, text: string, font: PDFFo
   page.drawText(text, { x: rect.x + (rect.w - w) / 2, y: baselineY, size, font, color });
 }
 
+/** One first-name size and one last-name size for the whole run of tags. */
+interface TagType {
+  first: number;
+  last: number;
+}
+
 function drawTag(
   page: PDFPage,
   rect: CellRect,
@@ -126,6 +132,7 @@ function drawTag(
   opts: NameTagOptions,
   chrome: TagChrome,
   fonts: { body: PDFFont; bodyBold: PDFFont; display: PDFFont },
+  type: TagType,
 ) {
   const ink = opts.inkSaver;
 
@@ -146,10 +153,8 @@ function drawTag(
   const first = student.first.trim();
   const last = student.last.trim();
   const hasLast = opts.showLastName && last.length > 0;
-  const maxW = rect.w - 2 * chrome.namePad;
-
-  const firstSize = Math.max(chrome.nameMin, fit(fonts.display, first, maxW, chrome.nameCap));
-  const lastSize = hasLast ? fit(fonts.bodyBold, last, maxW, chrome.lastCap) : 0;
+  const firstSize = type.first;
+  const lastSize = hasLast ? type.last : 0;
 
   const capH = 0.72; // approximate cap-height ratio for both faces
   const gap = hasLast ? firstSize * 0.28 : 0;
@@ -205,13 +210,30 @@ export async function renderNameTagsPdf(
 
   const roster = students.filter((s) => !(opts.skipAbsent && s.absent));
 
+  // One size across the whole run, set by the longest name. A sheet where
+  // "Ava" is twice the height of "Isabella" looks like a mistake; matching
+  // plates also cut and fold to the same visual weight.
+  const maxNameW = grid.cellW - 2 * chrome.namePad;
+  const tagType = {
+    first: uniformSize(display, roster.map((s) => s.first.trim()), maxNameW, {
+      max: chrome.nameCap,
+      min: chrome.nameMin,
+    }),
+    last: opts.showLastName
+      ? uniformSize(bodyBold, roster.map((s) => s.last.trim()).filter(Boolean), maxNameW, {
+          max: chrome.lastCap,
+          min: 5,
+        })
+      : 0,
+  };
+
   for (let i = 0; i < roster.length; i += perPage) {
     const page = doc.addPage([pageW, pageH]);
     // Cut guides go down first so tag content sits on top of them.
     if (opts.showCutLines) drawCutLines(page, grid, pageW, pageH);
     const batch = roster.slice(i, i + perPage);
     batch.forEach((student, slot) => {
-      drawTag(page, cellRect(grid, slot), student, opts, chrome, embedded);
+      drawTag(page, cellRect(grid, slot), student, opts, chrome, embedded, tagType);
     });
   }
 
@@ -220,8 +242,6 @@ export async function renderNameTagsPdf(
   return { bytes: await doc.save(), count: roster.length, pages };
 }
 
-export function nameTagsPdfFilename(className: string, style: TagStyle): string {
-  const cls = safeFilename(className);
-  const label = style === 'desk-plate' ? 'Desk plates' : 'Name tags';
-  return `${cls} — ${label}.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { nameTagsPdfFilename } from "./filenames";

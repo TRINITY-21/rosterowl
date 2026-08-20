@@ -6,7 +6,6 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import type { Color, PDFFont, PDFPage } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import type { PdfFonts, Student } from './types';
-import { safeFilename } from './filenames';
 
 export interface CertOptions {
   paper: 'letter' | 'a4';
@@ -177,8 +176,16 @@ export async function renderCertificatesPdf(
     page.drawText(sigLabel, { x: rightX + (lineW - body.widthOfTextAtSize(sigLabel, 9)) / 2, y: lineY - 14, size: 9, font: body, color: ink ? BLACK : GRAY });
 
     if (opts.showFooter) {
-      page.drawText('Made with RosterOwl — rosterowl.com', {
-        x: 40, y: 40, size: 7, font: body, color: FAINT,
+      // Centred along the bottom, inside the frame. At (40, 40) it landed on
+      // top of both border rules and the bottom-left corner dot — the one place
+      // on the page guaranteed to have something already drawn on it.
+      const mark = 'Made with RosterOwl — rosterowl.com';
+      page.drawText(mark, {
+        x: (pageW - body.widthOfTextAtSize(mark, 7)) / 2,
+        y: 44,
+        size: 7,
+        font: body,
+        color: FAINT,
       });
     }
   }
@@ -186,8 +193,6 @@ export async function renderCertificatesPdf(
   return { bytes: await doc.save(), count: recipients.length };
 }
 
-export function certsPdfFilename(className: string, award: string): string {
-  const cls = safeFilename(className);
-  const aw = safeFilename(award, 'Certificates');
-  return `${cls} — ${aw}.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { certsPdfFilename } from "./filenames";

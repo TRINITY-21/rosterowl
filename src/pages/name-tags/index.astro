@@ -1,9 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Faq from '../../components/Faq.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import MoreTools from '../../components/MoreTools.astro';
 import NameTagsApp from '../../components/NameTagsApp.svelte';
-import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+import { toolJsonLd, type FaqEntry } from '../../lib/seo';
 
 const jsonLd = toolJsonLd({
   name: 'RosterOwl Name Tags & Desk Plates',
@@ -12,8 +13,7 @@ const jsonLd = toolJsonLd({
     'Name tags and desk plates for the whole class from your student list: desk plates two per page or badge sheets eight per page, one PDF, no name typed twice. Free, no signup.',
 });
 
-// Mirrors the visible <section class="faq"> below, verbatim.
-const faqLd = faqJsonLd([
+const faqs: FaqEntry[] = [
   {
     q: `Will the 8-per-sheet tags line up with my label sheets?`,
     a: `They're sized to match Avery 5395-style badge sheets (2⅓″ × 3⅜″, 2 × 4 grid). On plain paper, use the dashed cut guides. Do a one-page test print first — printers vary.`,
@@ -26,15 +26,14 @@ const faqLd = faqJsonLd([
     q: `Can I add my class name to each tag?`,
     a: `Yes — the optional corner label prints small in the corner of every tag: class name, room number, "Field trip — May 12", anything.`,
   },
-]);
+];
 ---
 
 <Layout
   title="Class Name Tag & Desk Plate Generator | RosterOwl"
-  description="Every student's name tag or desk plate in one click: paste your class list, pick desk plates (2 per page) or badge sheets (8 per sheet, fits Avery 5395), and print one PDF. Cut guides included. Free, no signup — names never leave your browser."
+  description="Every student's name tag or desk plate in one click: paste your class list, pick desk plates (2 per page) or badge sheets (8 per sheet, fits Avery 5395), and print one PDF. Cut guides included. Free, no signup — nothing uploaded unless you turn on sync."
 >
   <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
-  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
 
   <main class="tool-page">
     <div class="page-head">
@@ -42,7 +41,7 @@ const faqLd = faqJsonLd([
       <p>
         Back-to-school's most-typed words are your students' names. Type them zero times: one
         click makes a plate or tag for everyone. Free · no signup ·
-        <a href="/privacy/">names never leave your browser</a>.
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -79,30 +78,7 @@ const faqLd = faqJsonLd([
         </div>
       </div>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>Will the 8-per-sheet tags line up with my label sheets?</summary>
-          <p>
-            They're sized to match Avery 5395-style badge sheets (2⅓″ × 3⅜″, 2 × 4 grid). On plain
-            paper, use the dashed cut guides. Do a one-page test print first — printers vary.
-          </p>
-        </details>
-        <details>
-          <summary>First names only?</summary>
-          <p>
-            Toggle "Show last names" off — first names print big and friendly, which is the usual
-            choice for elementary desk plates.
-          </p>
-        </details>
-        <details>
-          <summary>Can I add my class name to each tag?</summary>
-          <p>
-            Yes — the optional corner label prints small in the corner of every tag: class name,
-            room number, "Field trip — May 12", anything.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

@@ -7,7 +7,7 @@ const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
 const page = await ctx.newPage();
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(String(e)));
-const base = 'http://localhost:4321';
+const base = process.env.BASE_URL ?? 'http://localhost:4321';
 
 // Picker: pick 5 times, assert no repeats, check progress text
 await page.goto(base + '/picker/', { waitUntil: 'networkidle' });

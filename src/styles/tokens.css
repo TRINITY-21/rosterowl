@@ -93,9 +93,38 @@
 
   /* Readable ink for text sitting on the amber accent, both themes. */
   --on-accent: #2a1d05;
-  --desk-fill: light-dark(#ffffff, #223029);
-  --desk-line: light-dark(#c4bba7, #3d4f47);
-  --desk-empty-line: light-dark(#d8d0bf, #31423a);
-  --canvas-bg: light-dark(#f5f1e8, #17211d);
-  --canvas-dot: light-dark(#e3dccb, #22302a);
+
+  /* --- the seating canvas ------------------------------------------------
+     The furniture is real — a table slab under each group, a desktop per
+     student with a name plate on it, a chair tucked under — and it is laid out
+     on graph paper. All of it is screen-only: the printed chart
+     (src/lib/pdf.ts) stays deliberately flat, because a school laser printer
+     renders gradients and shadows as mud.
+
+     The paper covers the whole scrolling surface, so it never ends before the
+     room does. Fine rule every 16px with a stronger one every 64px — four to
+     the square, the proportion real graph paper uses.
+
+     The paper sits a few steps darker than --paper on purpose: the furniture on
+     it is near-white, and on a near-white ground an unoccupied desk vanished.
+     The page is the light thing; the canvas is a work surface. */
+  --canvas-bg: light-dark(#eee8da, #141c19);
+  --canvas-rule: light-dark(rgb(120 102 68 / 0.2), rgb(255 255 255 / 0.09));
+  --canvas-rule-fine: light-dark(rgb(120 102 68 / 0.09), rgb(255 255 255 / 0.042));
+
+  --table-top: light-dark(#fdfaf3, #26332c);
+  --table-bottom: light-dark(#f2e9d8, #1f2a25);
+  --table-edge: light-dark(#ded1b7, #38493f);
+  --table-shadow: light-dark(rgb(60 48 26 / 0.13), rgb(0 0 0 / 0.4));
+  --table-contact: light-dark(rgb(60 48 26 / 0.19), rgb(0 0 0 / 0.5));
+
+  /* The desktop itself: a gradient, so the small parts that punch a ring out
+     of it (zone dots, lock badge) use --desk-top, the colour at the ring. */
+  --desk-top: light-dark(#ffffff, #2b3831);
+  --desk-bottom: light-dark(#fbf7ee, #243029);
+  --desk-line: light-dark(#c0b193, #46594f);
+  --desk-empty-line: light-dark(#b0a184, #4a5f55);
+  --chair: light-dark(#cdbd9e, #45574d);
+  --plate-bg: light-dark(#fffdf7, #303e36);
+  --plate-line: light-dark(#e2d6bd, #45584e);
 }

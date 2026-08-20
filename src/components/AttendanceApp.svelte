@@ -1,13 +1,20 @@
 <!-- RosterOwl monthly attendance sheet tool -->
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
+  import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import type { NameOrder } from '../lib/pdfChecklist';
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import SampleBanner from './SampleBanner.svelte';
+  import { nameStamp } from '../lib/names';
   import Icon from './Icon.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { attendancePdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -29,24 +36,20 @@
   let inkSaver = $state(false);
   let showFooter = $state(true);
 
-  let previewUrl = $state('');
+  const preview = createPdfPreview();
   let generating = $state(true);
   let error = $state('');
   // 0 means "not measured yet": every real month has at least one school day,
   // so a zero here is either the first render or a render that failed.
   let days = $state(0);
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const canPreview =
-    typeof navigator === 'undefined' || (navigator as Navigator).pdfViewerEnabled !== false;
 
   const cls = $derived(app.activeClass);
   // An attendance register always lists everyone — deliberately no skip-absent option.
   const rowCount = $derived((cls?.students ?? []).length);
   let unrenderable = $state<string[]>([]);
   // Names only (privacy rule). Tracked by the preview effect so roster edits regenerate.
-  const namesKey = $derived(
-    (cls?.students ?? []).map((s) => `${s.first} ${s.last}`.trim()).join('\0')
-  );
+  const namesKey = $derived(nameStamp(cls?.students));
   // Never show a stale or placeholder day count — the register is only ever
   // one page, so the number is the one thing the note actually promises.
   const daysLabel = $derived(generating || days === 0 ? '…' : String(days));
@@ -76,6 +79,7 @@
   async function generate(o = opts()): Promise<Uint8Array | null> {
     const c = app.activeClass;
     if (!c || c.students.length === 0) {
+      preview.clear();
       error = 'No class yet — paste your class list first';
       days = 0;
       generating = false;
@@ -92,13 +96,7 @@
       const result = await renderAttendancePdf(c.students, o, fonts);
       days = result.days;
       unrenderable = result.unrenderable;
-      if (canPreview) {
-        const url = URL.createObjectURL(
-          new Blob([result.bytes.slice().buffer], { type: 'application/pdf' })
-        );
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = url;
-      }
+      preview.show(result.bytes);
       return result.bytes;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not build the PDF';
@@ -119,41 +117,38 @@
     };
   });
 
-  $effect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  });
 
-  async function download() {
-    if (rowCount === 0) return;
-    const o = opts();
-    const bytes = await generate(o);
-    if (!bytes) return;
-    const { attendancePdfFilename } = await import('../lib/pdfAttendance');
-    const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = attendancePdfFilename(o.subtitle || 'Class', o.year, o.month);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    app.toast('Attendance sheet saved to your downloads', 'ok');
+  // Rebuilt on demand rather than reusing the preview's bytes, so a change made
+  // while the preview was still rendering can't ship a stale sheet.
+  async function buildPdf(): Promise<Uint8Array> {
+    const bytes = await generate(opts());
+    if (!bytes) throw new Error(error || 'Could not build the PDF');
+    return bytes;
   }
 
+  const filename = $derived.by(() => {
+    const { year, month } = selectedMonth();
+    return attendancePdfFilename(cls?.name || 'Class', year, month);
+  });
+
 </script>
+<ToolBoundary tool="attendance sheet">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Preview the sheet, then replace it with your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Preview the sheet, then replace it with your own roster.
+    </SampleBanner>
   {/if}
 
   {#if !cls || cls.students.length === 0}
@@ -219,17 +214,21 @@
         <p class="print-note">
           {rowCount} student{rowCount === 1 ? '' : 's'} × {daysLabel} school days — always one page.
         </p>
-        <button class="btn primary" onclick={() => download()} disabled={generating || !!error || rowCount === 0}>
-          <Icon name="download" size={16} />
-          {generating ? 'Preparing preview…' : 'Download attendance sheet'}
-        </button>
+        <ShareActions
+          getBytes={buildPdf}
+          downloadLabel="Download attendance sheet"
+          {filename}
+          label="attendance sheet"
+          disabled={generating || !!error || rowCount === 0}
+          onerror={(e) => (error = e instanceof Error ? e.message : 'Could not build the PDF')}
+        />
       </div>
       <PdfPreview
         label="attendance sheet"
-        {previewUrl}
+        previewUrl={preview.url}
         {generating}
         {error}
-        {canPreview}
+        canPreview={preview.canPreview}
         onretry={() => generate()}
         portrait={orientation === 'portrait'}
       />
@@ -241,6 +240,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   /* The alert glyph is a flex item of the global .print-note.warn row: keep it

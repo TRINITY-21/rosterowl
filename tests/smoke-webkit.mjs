@@ -4,8 +4,11 @@
 // PDF preview area renders blank here even though real desktop Safari shows
 // it fine. Browsers that truly can't preview report pdfViewerEnabled=false
 // and get the .nopreview fallback message instead. Download works everywhere.
+import { mkdir } from 'node:fs/promises';
 import { webkit } from 'playwright';
-const out = '/tmp/rosterowl-webkit';
+
+const out = process.argv[2] ?? '/tmp/rosterowl-webkit';
+await mkdir(out, { recursive: true });
 const errors = [];
 const browser = await webkit.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -13,7 +16,7 @@ const page = await ctx.newPage();
 page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
 page.on('pageerror', (e) => errors.push('pageerror: ' + String(e)));
 
-const base = 'http://localhost:4321';
+const base = process.env.BASE_URL ?? 'http://localhost:4321';
 await page.goto(base + '/seating-chart/', { waitUntil: 'networkidle' });
 await page.waitForSelector('[data-desk-id]', { timeout: 15000 });
 const deskCount = await page.locator('[data-desk-id]').count();

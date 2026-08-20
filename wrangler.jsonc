@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rosterowl",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-08-01",
+
+  // The site is still a fully static Astro build. Cloudflare serves everything
+  // in dist/ directly from the edge and only invokes the Worker for paths that
+  // are not assets — which, by construction, means /api/* and nothing else. The
+  // SEO surface therefore costs zero Worker invocations, and dist/_headers still
+  // applies to it (see tools/csp/integration.mjs).
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rosterowl",
+      // Replace with the id printed by: npx wrangler d1 create rosterowl
+      "database_id": "be1a46d9-ad69-4910-a444-d7ddb592c050",
+      "migrations_dir": "worker/migrations"
+    }
+  ],
+
+  // Apex only. The canonical URL in seo.ts is https://rosterowl.com with no
+  // www, and serving the same pages on both hostnames would split ranking
+  // signals — send www to the apex with a Cloudflare redirect rule instead of
+  // binding it here.
+  "routes": [{ "pattern": "rosterowl.com", "custom_domain": true }],
+
+  "vars": {
+    // Public, not a secret. Set GOOGLE_CLIENT_SECRET with:
+    //   npx wrangler secret put GOOGLE_CLIENT_SECRET
+    "GOOGLE_CLIENT_ID": "201770014508-2u4nfghapfgcvrrk52a5vh9v5d7vn6gu.apps.googleusercontent.com",
+    "APP_ORIGIN": "https://rosterowl.com"
+  },
+
+  "observability": { "enabled": true }
+}

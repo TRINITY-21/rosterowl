@@ -1,19 +1,19 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Faq from '../../components/Faq.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import MoreTools from '../../components/MoreTools.astro';
 import ChecklistApp from '../../components/ChecklistApp.svelte';
-import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+import { toolJsonLd, type FaqEntry } from '../../lib/seo';
 
 const jsonLd = toolJsonLd({
   name: 'RosterOwl Class Checklist Generator',
   path: '/checklist/',
   description:
-    'Printable class checklist with your students already listed: name the columns (homework, permission slips, signatures) and download a clean one-page grid. Free, no signup — names never leave your browser.',
+    'Printable class checklist with your students already listed: name the columns (homework, permission slips, signatures) and download a clean one-page grid. Free, no signup — nothing uploaded unless you turn on sync.',
 });
 
-// Mirrors the visible <section class="faq"> below, verbatim.
-const faqLd = faqJsonLd([
+const faqs: FaqEntry[] = [
   {
     q: `What do teachers actually use this for?`,
     a: `Homework turn-in (Mon–Fri columns — there's a one-click preset), permission slips, picture-day forms, library book returns, field-trip headcounts, materials checkout, parent-signature tracking, station rotations… any "who's done it" question.`,
@@ -26,7 +26,7 @@ const faqLd = faqJsonLd([
     q: `A new student joined — do I redo my grid?`,
     a: `Add them once to your class list and every future checklist includes them, re-alphabetized automatically. That's the point of the shared roster.`,
   },
-]);
+];
 ---
 
 <Layout
@@ -34,7 +34,6 @@ const faqLd = faqJsonLd([
   description="Stop rebuilding the same grid in Excel: your class list down the side, your columns across the top — homework turn-in, permission slips, library books, signatures. One page, numbered, alphabetized, ready to print. Free, no signup."
 >
   <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
-  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
 
   <main class="tool-page">
     <div class="page-head">
@@ -42,7 +41,7 @@ const faqLd = faqJsonLd([
       <p>
         Your students down the side, your columns across the top — permission slips, homework,
         library books, anything. One page, numbered, alphabetized. Free · no signup ·
-        <a href="/privacy/">names never leave your browser</a>.
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -62,8 +61,8 @@ const faqLd = faqJsonLd([
         <div>
           <h3>Numbered and sorted</h3>
           <p>
-            Rows are numbered (headcounts in one glance) and sorted how registers actually work —
-            "Last, First" A→Z — or by first name, or in your roster order.
+            Rows are numbered (headcounts in one glance) and sorted the way attendance sheets
+            actually work — "Last, First" A→Z — or by first name, or in your roster order.
           </p>
         </div>
         <div>
@@ -79,31 +78,7 @@ const faqLd = faqJsonLd([
         </div>
       </div>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>What do teachers actually use this for?</summary>
-          <p>
-            Homework turn-in (Mon–Fri columns — there's a one-click preset), permission slips,
-            picture-day forms, library book returns, field-trip headcounts, materials checkout,
-            parent-signature tracking, station rotations… any "who's done it" question.
-          </p>
-        </details>
-        <details>
-          <summary>Can I leave the column headers blank?</summary>
-          <p>
-            Yes — blank headers print as empty boxes you can label by hand, which makes one
-            printout reusable for anything all term.
-          </p>
-        </details>
-        <details>
-          <summary>A new student joined — do I redo my grid?</summary>
-          <p>
-            Add them once to your class list and every future checklist includes them,
-            re-alphabetized automatically. That's the point of the shared roster.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

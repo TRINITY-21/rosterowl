@@ -10,7 +10,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import { cellRect } from './imposition';
 import type { CellRect, GridSpec } from './imposition';
 import type { CertFonts } from './pdfCerts';
-import { safeFilename } from './filenames';
+import { uniformSize } from './pdfText';
 
 /** One job slot on the chart. `name: null` = unassigned (em-dash slot). */
 export interface JobEntry {
@@ -62,12 +62,20 @@ function drawCenteredIn(
   page.drawText(text, { x: rect.x + (rect.w - w) / 2, y: baselineY, size, font, color });
 }
 
+interface CardType {
+  /** One label size for the whole chart, set by the longest job title. */
+  label: number;
+  /** One name size for the whole chart, set by the longest name. */
+  name: number;
+}
+
 function drawCard(
   page: PDFPage,
   rect: CellRect,
   entry: JobEntry,
   ink: boolean,
   fonts: { body: PDFFont; bodyBold: PDFFont; display: PDFFont },
+  type: CardType,
 ) {
   // Card chrome: soft cream fill with a marigold border; black outline only
   // in ink-saver mode.
@@ -84,13 +92,10 @@ function drawCard(
   });
 
   const pad = Math.min(10, rect.h * 0.12);
-  const maxW = rect.w - 2 * pad;
 
   // Job title: small bold uppercase label along the top of the card.
   const label = entry.title.trim().toUpperCase();
-  const labelSize = label
-    ? Math.min(Math.min(11, rect.h * 0.17), fit(fonts.bodyBold, label, maxW, 11))
-    : 0;
+  const labelSize = label ? type.label : 0;
   const labelBaseline = rect.y + rect.h - pad - labelSize;
   if (label && labelSize > 0.5) {
     drawCenteredIn(page, rect, label, fonts.bodyBold, labelSize, labelBaseline, ink ? BLACK : GREEN);
@@ -102,8 +107,7 @@ function drawCard(
   const zoneH = labelBaseline - labelSize * 0.5 - (rect.y + pad);
   const capH = 0.72; // approximate cap-height ratio
   if (entry.name) {
-    const cap = Math.min(40, zoneH * 0.6);
-    const size = fit(fonts.display, entry.name, maxW, cap);
+    const size = type.name;
     if (size > 0.5) {
       const baseline = rect.y + pad + (zoneH - size * capH) / 2;
       drawCenteredIn(page, rect, entry.name, fonts.display, size, baseline, ink ? BLACK : INK);
@@ -203,14 +207,34 @@ export async function renderJobsChartPdf(
     gutterY: gutter,
   };
 
+  // One label size and one name size for the entire chart, each set by the
+  // longest member of its set. Fitting every card on its own printed "Ava" at
+  // twice the size of "Maya L." on the same sheet, which reads as a mistake
+  // rather than as emphasis.
+  const pad = Math.min(10, cellH * 0.12);
+  const maxW = cellW - 2 * pad;
+  const labelSize = uniformSize(
+    bodyBold,
+    entries.map((e) => e.title.trim().toUpperCase()),
+    maxW,
+    { max: Math.min(11, cellH * 0.17), min: 4 },
+  );
+  const zoneH = cellH - 2 * pad - 1.5 * labelSize;
+  const nameSize = uniformSize(
+    display,
+    entries.map((e) => e.name ?? '').filter(Boolean),
+    maxW,
+    { max: Math.min(40, zoneH * 0.6), min: 6 },
+  );
+  const type = { label: labelSize, name: nameSize };
+
   if (cellH > 2) {
-    entries.forEach((entry, i) => drawCard(page, cellRect(grid, i), entry, ink, embedded));
+    entries.forEach((entry, i) => drawCard(page, cellRect(grid, i), entry, ink, embedded, type));
   }
 
   return { bytes: await doc.save(), pages: doc.getPageCount() };
 }
 
-export function jobsPdfFilename(className: string): string {
-  const cls = safeFilename(className);
-  return `${cls} — Jobs chart.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { jobsPdfFilename } from "./filenames";

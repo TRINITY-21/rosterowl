@@ -340,13 +340,13 @@
 
   <footer>
     <p>
-      Your class list lives <strong>in this browser only</strong> — it never touches a server.
-      <a href="/privacy/">How that works</a>
+      Your class list lives <strong>on this device</strong> — it only reaches a server if you
+      turn on sync. <a href="/privacy/">How that works</a>
     </p>
     {#if isSafari}
       <p class="safari">
         Safari can clear saved data after 7 days away.
-        <button class="linkish" onclick={() => app.downloadBackup()}>Download a backup</button> to be safe.
+        <button class="linkish" onclick={() => app.downloadBackup()}>Save a backup file</button> to be safe.
       </p>
     {/if}
   </footer>

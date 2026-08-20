@@ -1,5 +1,7 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
+import Faq from '../../../components/Faq.astro';
+import type { FaqEntry } from '../../../lib/seo';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MoreTools from '../../../components/MoreTools.astro';
@@ -16,6 +18,21 @@ const jsonLd = {
     'Print a substitute-ready seating chart: extra-large names readable from the front of the room, one page, and nothing confidential on it. Free, no signup.',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
 };
+
+const faqs: FaqEntry[] = [
+  {
+    q: `Can the sub mark attendance on it?`,
+    a: `Yes — each printed desk has open space around the name, so checking off students with a pen works fine. Keep the name size a notch below maximum if you want more room to write.`,
+  },
+  {
+    q: `What if a student moved seats since I printed it?`,
+    a: `Charts regenerate in seconds — update the seat, re-download, reprint. Locked seats make sure the rest of the room doesn't shift in the process.`,
+  },
+  {
+    q: `Is there a whole substitute binder tool?`,
+    a: `Coming this winter: chart + schedule + class notes as one printable pack, powered by the same class list. The chart above is the foundation of it.`,
+  },
+];
 ---
 
 <Layout
@@ -37,7 +54,7 @@ const jsonLd = {
       <p>
         Big names, one page, nothing private. Make the chart below, crank the name size in the PDF
         dialog, and it's sub-binder ready. Free · no signup ·
-        <a href="/privacy/">names never leave your browser</a>.
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -69,31 +86,7 @@ const jsonLd = {
         same roster.
       </p>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>Can the sub mark attendance on it?</summary>
-          <p>
-            Yes — each printed desk has open space around the name, so ticking off students with a
-            pen works fine. Keep the name size a notch below maximum if you want more room to
-            write.
-          </p>
-        </details>
-        <details>
-          <summary>What if a student moved seats since I printed it?</summary>
-          <p>
-            Charts regenerate in seconds — update the seat, re-download, reprint. Locked seats
-            make sure the rest of the room doesn't shift in the process.
-          </p>
-        </details>
-        <details>
-          <summary>Is there a whole substitute binder tool?</summary>
-          <p>
-            Coming this winter: chart + schedule + class notes as one printable pack, powered by
-            the same class list. The chart above is the foundation of it.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

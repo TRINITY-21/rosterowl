@@ -231,6 +231,14 @@ class AppState {
     this.versions = loadVersions();
     this.loaded = true;
 
+    // Cloud sync, if this teacher opted into it. Imported lazily so the module
+    // is not in the bundle's critical path, and it makes no request at all
+    // unless a session cookie is already present. Signed out is the default and
+    // costs nothing.
+    if (typeof window !== 'undefined') {
+      void import('./sync.svelte').then((m) => m.sync.start());
+    }
+
     // Cross-tab safety: this browser's storage is the only copy of the
     // teacher's data, so a stale tab must adopt newer state before it can
     // save over it.
@@ -255,18 +263,7 @@ class AppState {
       window.addEventListener('storage', (e) => {
         if (e.key !== STORAGE_KEY || !e.newValue) return;
         try {
-          const state = parseBackup(e.newValue);
-          this.rooms = state.rooms;
-          this.classes = state.classes;
-          this.activeClassId =
-            state.classes.find((c) => c.id === this.activeClassId)?.id ??
-            state.activeClassId ??
-            state.classes[0]?.id ??
-            null;
-          this.settings = { ...defaultSettings(), ...state.settings };
-          this.applyTheme();
-          this.clearSelection();
-          this.refreshConflicts();
+          this.adoptState(parseBackup(e.newValue));
         } catch {
           /* ignore malformed writes from other tabs */
         }
@@ -280,6 +277,29 @@ class AppState {
         }
       });
     }
+  }
+
+  /**
+   * Replace the whole live document with one that came from somewhere else —
+   * another tab, or the sync API.
+   *
+   * The active class is preserved by id where it survives the swap, so a
+   * teacher who is looking at Period 2 does not get thrown back to Period 1 by
+   * a change made elsewhere. Callers own persistence: the cross-tab listener
+   * must not write back (the other tab already did), while a sync pull must.
+   */
+  adoptState(state: PersistedState) {
+    this.rooms = state.rooms;
+    this.classes = state.classes;
+    this.activeClassId =
+      state.classes.find((c) => c.id === this.activeClassId)?.id ??
+      state.classes.find((c) => c.id === state.activeClassId)?.id ??
+      state.classes[0]?.id ??
+      null;
+    this.settings = { ...defaultSettings(), ...state.settings };
+    this.applyTheme();
+    this.clearSelection();
+    this.refreshConflicts();
   }
 
   snapshot(): PersistedState {
@@ -303,7 +323,7 @@ class AppState {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.snapshot()));
       }
     } catch {
-      this.toast('Could not save to this browser — download a backup to be safe.', 'warn');
+      this.toast('Could not save to this browser — save a backup file to be safe.', 'warn');
     }
     // The header's class chip is drawn by an inline script (so pages that ship
     // no JavaScript stay that way) and cannot observe this store. Tell it.
@@ -320,6 +340,13 @@ class AppState {
     }
     const newest = this.versions[0];
     if (!newest || Date.now() - newest.ts >= AUTO_SNAPSHOT_MS) this.captureVersion('auto');
+
+    // Announced rather than called: cloud sync listens for this, and appState
+    // stays unaware that sync exists. On a device that never signs in, nothing
+    // is listening and nothing leaves the browser.
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('rosterowl-persisted'));
+    }
   }
 
   // ---- version history ----------------------------------------------------
@@ -874,8 +901,8 @@ class AppState {
     if (this.settings.backupPromptShown) return;
     this.settings.backupPromptShown = true;
     this.requestPersist();
-    this.toast('Class saved in this browser. Download a backup file so it can never be lost.', 'info', {
-      label: 'Save backup',
+    this.toast('Class saved in this browser. Save a backup file so it can never be lost.', 'info', {
+      label: 'Save backup file',
       run: () => this.downloadBackup(),
     });
     this.scheduleSave();

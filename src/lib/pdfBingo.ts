@@ -5,13 +5,12 @@
 // roster-agnostic: items arrive as plain strings, and printed output carries
 // names only (privacy rule — no absent flags, no zone prefs, no roster tags).
 
-import { PDFDocument, rgb } from 'pdf-lib';
-import type { Color, PDFFont, PDFPage } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
-import { cellRect, drawCutLines } from './imposition';
+import type { Color, PDFFont, PDFPage } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 import type { CellRect, GridSpec } from './imposition';
+import { cellRect, drawCutLines } from './imposition';
 import type { CertFonts } from './pdfCerts';
-import { safeFilename } from './filenames';
 
 export type BingoSize = 3 | 4 | 5;
 
@@ -41,7 +40,7 @@ export interface BingoRenderOptions {
   paper: 'letter' | 'a4';
   /** 1 = big and playable (default); 2 = stacked pair, paper saver. */
   perPage: 1 | 2;
-  /** Append a final page listing every item in a numbered tick-box grid. */
+  /** Append a final page listing every item in a numbered checkbox grid. */
   callerList: boolean;
   /** Every item in play (the grid pool), for the caller's list. */
   items: string[];
@@ -304,7 +303,7 @@ function drawFooter(page: PDFPage, opts: BingoRenderOptions, font: PDFFont) {
 }
 
 /**
- * Caller's list: every item in a numbered tick-box grid — always one page
+ * Caller's list: every item in a numbered checkbox grid — always one page
  * (columns and row height size down to fit, never spill to a second sheet).
  */
 function drawCallerPage(
@@ -321,7 +320,7 @@ function drawCallerPage(
   let y = pageH - MARGIN - 18;
   page.drawText("Caller's list", { x: MARGIN, y, size: 20, font: f.display, color: ink ? BLACK : GREEN });
   y -= 14;
-  page.drawText(`${items.length} items — tick each one off as you call it`, {
+  page.drawText(`${items.length} items — check each one off as you call it`, {
     x: MARGIN,
     y,
     size: 9.5,
@@ -441,6 +440,6 @@ export async function renderBingoPdf(
   return { bytes: await doc.save(), pages, cards: cards.length };
 }
 
-export function bingoPdfFilename(className: string): string {
-  return `${safeFilename(className)} — Bingo cards.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { bingoPdfFilename } from "./filenames";

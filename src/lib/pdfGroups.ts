@@ -2,10 +2,10 @@
 // Same privacy rule as the chart: names only.
 
 import { PDFDocument, rgb } from 'pdf-lib';
+import { capOffset, uniformSize } from './pdfText';
 import type { Color, PDFFont } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import type { Id, PdfFonts, PdfOptions, Student } from './types';
-import { safeFilename } from './filenames';
 
 const PAGE_SIZES: Record<PdfOptions['paper'], [number, number]> = {
   letter: [612, 792],
@@ -88,16 +88,19 @@ export async function renderGroupsPdf(
   const boxW = (contentW - gap * (cols - 1)) / cols;
   const boxH = (areaH - gap * (rows - 1)) / rows;
 
-  // Name size: fit the tallest member list and the widest name.
-  const headH = 20;
-  const lineH = Math.max(9, Math.min(15, (boxH - headH - 12) / Math.max(1, maxMembers)));
-  let nameSize = Math.min(12, lineH * 0.78) * opts.nameScale;
-  for (const g of groups) {
-    for (const s of g) {
-      nameSize = Math.min(nameSize, fit(regular, displayNames.get(s.id) ?? s.first, boxW - 20, nameSize));
-    }
-  }
-  nameSize = Math.max(6, nameSize);
+  // Name size: one size for every group, set by the longest name and by the
+  // fullest group. The caps here used to be 15pt of line and 12pt of type
+  // regardless of box size, which left a four-name group sitting in the top
+  // third of a half-page card with nothing beneath it. They now scale with the
+  // box, so a short list prints large and a long one still fits.
+  const headH = Math.min(26, boxH * 0.16);
+  const bodyH = boxH - headH - 14;
+  const lineH = Math.max(9, Math.min(36, bodyH / Math.max(1, maxMembers)));
+  const allNames = groups.flatMap((g) => g.map((st) => displayNames.get(st.id) ?? st.first));
+  const nameSize = uniformSize(regular, allNames, boxW - 20, {
+    max: Math.min(28, lineH * 0.74) * opts.nameScale,
+    min: 6,
+  });
 
   const boxColor: Color | undefined = ink ? undefined : BOX_FILL;
   for (let i = 0; i < G; i++) {
@@ -117,17 +120,24 @@ export async function renderGroupsPdf(
     const label = `Group ${i + 1}`;
     page.drawText(label, {
       x: x + 10,
-      y: top - 16,
+      y: top - headH + (headH - 11) / 2 - 2,
       size: 11,
       font: bold,
       color: ink ? BLACK : GREEN,
     });
     const members = groups[i]!;
+    // Centre this group's own names in the card body: a group of three in a
+    // grid sized for four should sit centred, not leave a gap at the bottom.
+    const ownH = members.length * lineH;
+    const bodyTop = top - headH - 4;
+    const startY = bodyTop - (bodyH - ownH) / 2;
     for (let m = 0; m < members.length; m++) {
       const name = displayNames.get(members[m]!.id) ?? members[m]!.first;
+      // Each name sits optically centred in its own line slot.
+      const slotCentre = startY - m * lineH - lineH / 2;
       page.drawText(name, {
         x: x + 10,
-        y: top - headH - 8 - m * lineH - nameSize,
+        y: slotCentre - capOffset(nameSize),
         size: nameSize,
         font: regular,
         color: ink ? BLACK : TITLE_INK,
@@ -139,6 +149,6 @@ export async function renderGroupsPdf(
 }
 
 /** "Period 2 — groups.pdf", matching the other generators' naming. */
-export function groupsPdfFilename(className: string): string {
-  return `${safeFilename(className)} — groups.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { groupsPdfFilename } from "./filenames";

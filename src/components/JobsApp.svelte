@@ -1,14 +1,21 @@
 <!-- RosterOwl classroom jobs chart tool -->
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
+  import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import { JOB_PRESETS, type Preset } from '../lib/presets';
   import PresetPicker from './PresetPicker.svelte';
   import PasteModal from './PasteModal.svelte';
   import Icon from './Icon.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import SampleBanner from './SampleBanner.svelte';
+  import { rosterStamp } from '../lib/names';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { jobsPdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -20,25 +27,15 @@
   let showFooter = $state(true);
   let newJob = $state('');
 
-  let previewUrl = $state('');
+  const preview = createPdfPreview();
   let generating = $state(true);
   let error = $state('');
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const canPreview =
-    typeof navigator === 'undefined' || (navigator as Navigator).pdfViewerEnabled !== false;
 
   const cls = $derived(app.activeClass);
-
-
   // Preview must follow roster edits (including from another tab), or the
-
   // on-screen PDF and the downloaded file disagree.
-
-  const rosterKey = $derived(
-
-    (cls?.students ?? []).map((s) => `${s.first} ${s.last}|${s.absent}`).join('\0')
-
-  );
+  const rosterKey = $derived(rosterStamp(cls?.students));
   const titles = $derived(cls?.jobs.titles ?? []);
   const assignments = $derived(app.jobAssignments);
   const jobCount = $derived(titles.length);
@@ -70,8 +67,7 @@
       return null;
     }
     if (jobCount === 0) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = '';
+      preview.clear();
       error = '';
       generating = false;
       return null;
@@ -85,11 +81,7 @@
       ]);
       const fonts = await loadCertFonts();
       const { bytes } = await renderJobsChartPdf(entries(), opts(), fonts);
-      if (canPreview) {
-        const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = url;
-      }
+      preview.show(bytes);
       return bytes;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not build the PDF';
@@ -122,25 +114,16 @@
     };
   });
 
-  $effect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  });
 
-  async function download() {
-    if (jobCount === 0) return;
+  // Rebuilt on demand rather than reusing the preview's bytes, so an option
+  // changed while the preview was still rendering cannot ship a stale sheet.
+  async function buildPdf(): Promise<Uint8Array> {
     const bytes = await generate();
-    if (!bytes) return;
-    const { jobsPdfFilename } = await import('../lib/pdfJobs');
-    const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = jobsPdfFilename(cls?.name ?? 'Class');
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    app.toast('Jobs chart saved to your downloads', 'ok');
+    if (!bytes) throw new Error(error || 'Could not build the PDF');
+    return bytes;
   }
+
+  const filename = $derived(jobsPdfFilename(cls?.name || 'Class'));
 
   function commitRename(i: number, e: Event) {
     const input = e.currentTarget as HTMLInputElement;
@@ -190,19 +173,23 @@
     );
   }
 </script>
+<ToolBoundary tool="jobs chart">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
     <div class="tool-cluster">
       <ClassSwitcher onnew={() => (pasteMode = 'new')} />
     </div>
+    <div class="tool-cluster">
+      <SyncMenu />
+    </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Try a rotation, then replace it with your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Try a rotation, then replace it with your own roster.
+    </SampleBanner>
   {/if}
 
   {#if !cls || cls.students.length === 0}
@@ -211,7 +198,7 @@
       actionLabel={cls ? 'Add students' : 'Paste your class list'}
       onaction={() => (pasteMode = cls ? 'add' : 'new')}
     >
-      Paste your class list once — every job chart starts from it.
+      Paste your class list once — every jobs chart starts from it.
     </EmptyState>
   {:else}
     <div class="print-grid jobs-grid">
@@ -323,45 +310,39 @@
             ? 'Add a job to build the poster.'
             : `${jobCount} job${jobCount === 1 ? '' : 's'} on a poster — always one page.`}
         </p>
-        <button class="btn primary" onclick={() => download()} disabled={generating || !!error || jobCount === 0}>
-          <Icon name="download" size={16} />
-          {generating && jobCount > 0 ? 'Preparing preview…' : 'Download jobs chart'}
-        </button>
-      </div>
-      {#if jobCount === 0}
-        <PdfPreview
+        <ShareActions
+          getBytes={buildPdf}
+          downloadLabel="Download jobs chart"
+          {filename}
           label="jobs chart"
-          {previewUrl}
-          {generating}
-          {error}
-          {canPreview}
-          onretry={() => generate()}
-          portrait
-        >
-          {#snippet blocked()}
-            <EmptyState
-              compact
-              title="No jobs on the chart yet"
-              actionLabel={`Add the ${JOB_PRESETS[0].value.length} classic jobs`}
-              onaction={() => applyPreset()}
-            >
-              Add one on the left, or start from the classics — line leader, door holder, paper
-              passer and friends. Rename or remove any of them afterwards; the poster preview
-              appears here.
-            </EmptyState>
-          {/snippet}
-        </PdfPreview>
-      {:else}
-        <PdfPreview
-          label="jobs chart"
-          {previewUrl}
-          {generating}
-          {error}
-          {canPreview}
-          onretry={() => generate()}
-          portrait
+          disabled={generating || !!error || jobCount === 0}
+          onerror={(e) => (error = e instanceof Error ? e.message : 'Could not build the PDF')}
         />
-      {/if}
+      </div>
+      <!-- One instance; see ChecklistApp for why the two branches collapsed. -->
+      <PdfPreview
+        label="jobs chart"
+        previewUrl={preview.url}
+        {generating}
+        {error}
+        canPreview={preview.canPreview}
+        onretry={() => generate()}
+        portrait
+        blocked={jobCount === 0 ? noJobs : undefined}
+      />
+
+      {#snippet noJobs()}
+        <EmptyState
+          compact
+          title="No jobs on the chart yet"
+          actionLabel={`Add the ${JOB_PRESETS[0].value.length} classic jobs`}
+          onaction={() => applyPreset()}
+        >
+          Add one on the left, or start from the classics — line leader, door holder, paper
+          passer and friends. Rename or remove any of them afterwards; the poster preview
+          appears here.
+        </EmptyState>
+      {/snippet}
     </div>
   {/if}
 </div>
@@ -370,6 +351,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   /* This panel holds a two-field-per-row editor, not a stack of single

@@ -1,9 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Faq from '../../components/Faq.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import MoreTools from '../../components/MoreTools.astro';
 import FlashcardsApp from '../../components/FlashcardsApp.svelte';
-import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+import { toolJsonLd, type FaqEntry } from '../../lib/seo';
 
 const jsonLd = toolJsonLd({
   name: 'RosterOwl Flashcard Maker',
@@ -12,11 +13,10 @@ const jsonLd = toolJsonLd({
     'Big printable flashcards from your class list or any word list: name-wall cards, name-jar sticks, sight words, vocab. Three sizes with cut guides, one PDF. Free, no signup — nothing leaves your browser.',
 });
 
-// Mirrors the visible <section class="faq"> below, verbatim (inline <strong> stripped).
-const faqLd = faqJsonLd([
+const faqs: FaqEntry[] = [
   {
     q: `Which size should I use for what?`,
-    a: `Jumbo (2 per page) reads from across the room — word walls, name-jar sticks, pocket-chart headers. Classic (4 per page) is the standard drill flashcard for small groups. Pocket (8 per page) makes ring cards and center-station decks. All three print with dashed cut guides.`,
+    a: `<strong>Jumbo</strong> (2 per page) reads from across the room — word walls, name-jar sticks, pocket-chart headers. <strong>Classic</strong> (4 per page) is the standard drill flashcard for small groups. <strong>Pocket</strong> (8 per page) makes ring cards and center-station decks. All three print with dashed cut guides.`,
   },
   {
     q: `I repeated a word on purpose — does it stay repeated?`,
@@ -26,7 +26,7 @@ const faqLd = faqJsonLd([
     q: `Is my word list saved?`,
     a: `Yes — it's stored with your class, in your browser on your device only, and it's back the next time you open this page. Nothing is uploaded anywhere.`,
   },
-]);
+];
 ---
 
 <Layout
@@ -34,7 +34,6 @@ const faqLd = faqJsonLd([
   description="Print big flashcards in one click: every student's name as a card set (name jar, word wall, sub's cheat sheet) or any word list — sight words, vocab, math facts. Three sizes, dashed cut guides, one PDF. Free, no signup, no watermark."
 >
   <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
-  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
 
   <main class="tool-page">
     <div class="page-head">
@@ -42,7 +41,7 @@ const faqLd = faqJsonLd([
       <p>
         The whole class as a card set in one click — name jar, word wall, sub's cheat sheet — or
         paste any word list: sight words, vocab, math facts. Three sizes, cut guides, one PDF.
-        Free · no signup · <a href="/privacy/">names never leave your browser</a>.
+        Free · no signup · <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -81,32 +80,7 @@ const faqLd = faqJsonLd([
         </div>
       </div>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>Which size should I use for what?</summary>
-          <p>
-            <strong>Jumbo</strong> (2 per page) reads from across the room — word walls, name-jar
-            sticks, pocket-chart headers. <strong>Classic</strong> (4 per page) is the standard
-            drill flashcard for small groups. <strong>Pocket</strong> (8 per page) makes ring
-            cards and center-station decks. All three print with dashed cut guides.
-          </p>
-        </details>
-        <details>
-          <summary>I repeated a word on purpose — does it stay repeated?</summary>
-          <p>
-            Yes. Every line in your list becomes its own card, duplicates included — handy when a
-            sight-word deck needs "the" three times, or a game needs matching pairs.
-          </p>
-        </details>
-        <details>
-          <summary>Is my word list saved?</summary>
-          <p>
-            Yes — it's stored with your class, in your browser on your device only, and it's back
-            the next time you open this page. Nothing is uploaded anywhere.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

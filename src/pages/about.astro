@@ -1,0 +1,105 @@
+---
+import TextPage from '../layouts/TextPage.astro';
+import { ALL_TOOLS } from '../lib/tools';
+---
+
+<TextPage
+  title="About RosterOwl — who makes it and why | RosterOwl"
+  description="RosterOwl is a free suite of classroom tools built by a small independent studio. No accounts, no ads, no student data collection — everything runs in your browser."
+  heading="About RosterOwl"
+  lede="RosterOwl is a set of <strong>free classroom tools that share one class list</strong>. Paste your roster once, then use it for seating charts, groups, name tags, certificates and the rest — without it ever leaving your browser."
+>
+  <h2>Why it exists</h2>
+  <p>
+    Every teacher rebuilds the same class list over and over — once in the seating chart tool, again
+    in a group generator, again in a spreadsheet for the attendance grid, again when the substitute
+    needs a copy. The list is the same every time. Only the piece of paper changes.
+  </p>
+  <p>
+    So RosterOwl is built the other way around: the roster is the thing you own, and the {ALL_TOOLS.length}
+    tools are just different ways of printing it. Set up your room and your keep-apart rules once,
+    and every tool already knows about them.
+  </p>
+
+  <h2>Who makes it</h2>
+  <p>
+    RosterOwl is built and run by <strong>KNG Technologies</strong>, a small independent software
+    studio. It isn't venture-funded, it isn't a side project of a bigger edtech platform, and it has
+    no sales team who will call your district. It's one team shipping tools for a job we think is
+    badly served.
+  </p>
+  <p>
+    You can <a href="/contact/">reach a human</a> — the address goes to the people who write the
+    code, not to a ticket queue.
+  </p>
+
+  <h2>How it's free</h2>
+  <p>
+    There are no ads, no trackers, no email wall, and no "free for 30 students" ceiling. There is no
+    paid tier today. If one ever appears it will be for extras — premium certificate designs, opt-in
+    cloud sync — and <strong>the tools that are free today stay free and uncapped</strong>. That's a
+    commitment, not a promotion.
+  </p>
+
+  <h2 id="student-data">Student data, FERPA and COPPA</h2>
+  <p>
+    This section is here for the person in your district who has to sign off on new tools. The short
+    version:
+  </p>
+  <div class="callout">
+    <p>
+      <strong>Used as it comes, RosterOwl receives no student data.</strong> No account, no upload,
+      no server that processes what you type. Student names are handled entirely by your own browser
+      and stored only on the device you typed them into. Every tool on the site works this way, and
+      that is the default state for every teacher.
+    </p>
+  </div>
+  <p>
+    There is exactly one exception, and a teacher has to go and switch it on: <strong>sync</strong>.
+    If a teacher signs in with a Google account, the class list they have typed is stored on our
+    infrastructure (a Cloudflare database) so they can continue on a second computer. That copy is
+    ordinary text, so it is readable by us in principle; it can be deleted by the teacher at any
+    time from the sync menu, and deleting it leaves their own device untouched.
+  </p>
+  <p>
+    So the FERPA answer depends on which of those two states your staff use, and we would rather set
+    that out plainly than give you a single sentence that is only true half the time. With sync off,
+    no education record reaches us, there is nothing for us to disclose, and no retention period to
+    negotiate. With sync on, we hold the class list a teacher chose to upload — names only, never
+    absences, tags or notes — for as long as they keep the account, and we delete it on request or
+    when they press the button themselves. Under COPPA we collect no information from children
+    directly in either state; the only account RosterOwl ever creates belongs to an adult teacher.
+  </p>
+  <p>
+    If your district's answer is "no cloud storage of student names", that is a supported
+    configuration rather than a refusal: tell your staff not to sign in, and every tool still works
+    exactly as documented.
+  </p>
+  <p>
+    We would rather you verified that than took our word for it.
+    <a href="/privacy/">Our privacy page</a> lists every network request the site makes and walks
+    you through checking it yourself in about two minutes — including the part where you turn your
+    Wi-Fi off and the tools keep working.
+  </p>
+  <p>
+    If your district needs this in a particular form — a completed vendor questionnaire, a signed
+    data-privacy agreement, a statement on letterhead — <a href="/contact/">ask us</a>. We'd rather
+    fill in the form than lose you to a procurement checkbox.
+  </p>
+
+  <h2>Accessibility</h2>
+  <p>
+    The interface is set in Atkinson Hyperlegible, a typeface designed by the Braille Institute for
+    readers with low vision. Every control is reachable by keyboard, the whole site works with a
+    screen reader, there's a dark theme for projector-lit rooms, and motion respects your system's
+    reduced-motion setting. If something doesn't work with your setup, that's a bug — please
+    <a href="/contact/">tell us</a>.
+  </p>
+
+  <h2>What's next</h2>
+  <p>
+    The suite grows in the direction the stored roster makes better. Substitute binders, more
+    certificate occasions, and offline install are on the list. Things that don't touch the class
+    list — behavior analytics, gradebooks, parent messaging — are deliberately not.
+  </p>
+</TextPage>

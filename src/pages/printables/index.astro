@@ -1,11 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Faq from '../../components/Faq.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import BlankDownload from '../../components/BlankDownload.svelte';
 import MoreTools from '../../components/MoreTools.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import { BLANKS } from '../../lib/blanks';
-import { toolJsonLd } from '../../lib/seo';
+import { TEMPLATES } from '../../lib/geometry';
+import { toolJsonLd, type FaqEntry } from '../../lib/seo';
 
 const jsonLd = toolJsonLd({
   name: 'RosterOwl Blank Classroom Printables',
@@ -89,6 +91,21 @@ const PREVIEWS: Record<string, string> = {
       `<rect x="63.2" y="83.2" width="23.6" height="23.6" fill="${S.faint}"/>`
   ),
 };
+
+const faqs: FaqEntry[] = [
+  {
+    q: `Are these really free, with no watermark?`,
+    a: `Yes. No signup, no account, no logo stamped across your sheet. RosterOwl has no server costs to recover — the PDF is built in your browser when you press the button.`,
+  },
+  {
+    q: `Why would I paste a class list instead?`,
+    a: `Because then you never write names by hand again. The same roster fills your attendance sheet, checklist, name tags, jobs poster and bingo cards — and it stays on your device.`,
+  },
+  {
+    q: `Can I print these on A4?`,
+    a: `The blanks here are US Letter. Open the matching tool and switch Paper to A4 — every tool offers both, and the blank version is just the tool with no names in it.`,
+  },
+];
 ---
 
 <Layout
@@ -130,36 +147,13 @@ const PREVIEWS: Record<string, string> = {
       <h2>Looking for a blank seating chart?</h2>
       <p>
         Those live in their own gallery, because the layout is the whole point —
-        <a href="/seating-chart/templates/">eight blank seating chart templates</a> covering rows,
+        <a href="/seating-chart/templates/">{TEMPLATES.length} blank seating chart templates</a> covering rows,
         table groups of 4 and 6, pairs and U-shape.
       </p>
     </section>
 
     <section class="content">
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>Are these really free, with no watermark?</summary>
-          <p>
-            Yes. No signup, no account, no logo stamped across your sheet. RosterOwl has no server
-            costs to recover — the PDF is built in your browser when you press the button.
-          </p>
-        </details>
-        <details>
-          <summary>Why would I paste a class list instead?</summary>
-          <p>
-            Because then you never write names by hand again. The same roster fills your attendance
-            sheet, checklist, name tags, jobs poster and bingo cards — and it stays on your device.
-          </p>
-        </details>
-        <details>
-          <summary>Can I print these on A4?</summary>
-          <p>
-            The blanks here are US Letter. Open the matching tool and switch Paper to A4 — every
-            tool offers both, and the blank version is just the tool with no names in it.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
 
     <MoreTools />

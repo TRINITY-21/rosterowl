@@ -8,7 +8,6 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import type { PdfFonts, Student } from './types';
 import type { NameOrder } from './pdfChecklist';
 import { orderedNames } from './pdfChecklist';
-import { safeFilename } from './filenames';
 
 export interface AttendanceOptions {
   paper: 'letter' | 'a4';
@@ -232,7 +231,6 @@ export async function renderAttendancePdf(
   return { bytes: await doc.save(), rows: rows.length, days: dayList.length, unrenderable };
 }
 
-export function attendancePdfFilename(className: string, year: number, month: number): string {
-  const cls = safeFilename(className);
-  return `${cls} — Attendance ${MONTH_NAMES[month] ?? ''} ${year}.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { attendancePdfFilename } from "./filenames";

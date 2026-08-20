@@ -47,6 +47,20 @@ try {
     'tests/smoke-bingo.mjs',
     'tests/smoke-flashcards.mjs',
     'tests/smoke-attendance.mjs',
+    'tests/smoke-share.mjs',
+    // Cloud sync against a stubbed API — including the conflict path, which is
+    // the one place a teacher's work could be lost if the client is wrong.
+    'tests/smoke-sync.mjs',
+    // The only Safari-engine coverage. It was already headless and BASE_URL-
+    // driven like the rest; it sat outside CI only because it had the dev
+    // server's port hard-coded and so could not be pointed at this build.
+    'tests/smoke-webkit.mjs',
+    // Registers a service worker, so it gets its own browser context and runs
+    // after the tests that assume a plain network.
+    'tests/smoke-offline.mjs',
+    // Serves dist under the generated _headers on its own port; the preview
+    // server can't be used because it does not apply them.
+    'tests/smoke-csp.mjs',
   ]) {
     await run(script);
   }

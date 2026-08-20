@@ -1,0 +1,88 @@
+---
+import TextPage from '../layouts/TextPage.astro';
+import { CONTACT } from '../lib/site';
+---
+
+<TextPage
+  title="Contact RosterOwl — bug reports, requests, questions | RosterOwl"
+  description="Get in touch with the people who build RosterOwl. Bug reports, feature requests, district privacy questions — email a human, no ticket system."
+  heading="Get in touch"
+  lede="There's no support portal and no chatbot — <strong>email reaches a person</strong> who works on the tools. Bug reports and feature requests are read, and the annoying ones tend to get fixed first."
+>
+  <h2>Email us</h2>
+  <p class="mail" data-user={CONTACT.user} data-domain={CONTACT.domain}>
+    {CONTACT.user} <span aria-hidden="true">[at]</span><span class="sr-only">@</span>
+    {CONTACT.domain}
+  </p>
+  <p>
+    We aim to reply within a couple of business days. During the first week of a school year, make
+    that a bit longer — we know why you're writing then, and so is everyone else.
+  </p>
+
+  <h2>Reporting a bug</h2>
+  <p>
+    A tool that misbehaves is worth telling us about even if you found a way around it. The things
+    that help most:
+  </p>
+  <ul>
+    <li>Which tool, and what you were doing when it went wrong.</li>
+    <li>What you expected to happen, and what happened instead.</li>
+    <li>Your browser and device — "Safari on an iPad", "Chrome on a school laptop".</li>
+    <li>If it's about a PDF, the PDF itself, which you can attach.</li>
+  </ul>
+  <div class="callout">
+    <p>
+      <strong>Please don't send us your class list.</strong> We never receive student names by
+      design (<a href="/privacy/">here's how that works</a>), and emailing them to us would be the
+      one way to break that. A description, or a screenshot with the names blurred, is plenty.
+    </p>
+  </div>
+
+  <h2>Feature requests</h2>
+  <p>
+    The filter we apply is simple: <em>does the stored class list make this better?</em> Another way
+    to use your roster is very likely a yes. A gradebook, a parent-messaging system, or behavior
+    tracking is a no — not because they're bad ideas, but because they're a different product and
+    we'd do them badly.
+  </p>
+
+  <h2>Schools and districts</h2>
+  <p>
+    If you need a vendor privacy questionnaire completed, a data-privacy agreement reviewed, or a
+    written statement that no student data leaves the device, email us and say which form you need.
+    <a href="/about/#student-data">The short version is on the about page</a>.
+  </p>
+
+  <h2>Something's gone wrong with my saved classes</h2>
+  <p>
+    Because your data lives in your browser rather than on our server, we can't look it up or
+    restore it for you — and we can't accidentally lose it either. If a class has vanished, try the
+    same browser and device you set it up in, and check the version history inside the tool before
+    doing anything else. Then email us: knowing how it happened is how we stop it happening to
+    someone else.
+  </p>
+</TextPage>
+
+<script is:inline>
+  // No mailto: and no full address in the served HTML — the two halves are only
+  // joined here, at runtime. Without JS the page still shows a readable
+  // "hello [at] rosterowl.com", so nobody is left without a way to reach us.
+  (() => {
+    const host = document.querySelector('p.mail');
+    if (!host) return;
+    const { user, domain } = host.dataset;
+    const link = document.createElement('a');
+    link.href = `mailto:${user}@${domain}`;
+    link.textContent = `${user}@${domain}`;
+    host.replaceChildren(link);
+  })();
+</script>
+
+<style>
+  .mail,
+  .mail :global(a) {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--brand);
+  }
+</style>

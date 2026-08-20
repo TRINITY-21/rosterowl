@@ -5,8 +5,13 @@
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
+  import SyncMenu from './SyncMenu.svelte';
   import EmptyState from './EmptyState.svelte';
   import Icon from './Icon.svelte';
+  import SampleBanner from './SampleBanner.svelte';
+  import ToolBoundary from './ToolBoundary.svelte';
+  import ShareActions from './ShareActions.svelte';
+  import { groupsPdfFilename } from '../lib/filenames';
 
   app.load();
 
@@ -39,12 +44,12 @@
     seed = Math.floor(Math.random() * 1e9);
   }
 
-  async function downloadPdf() {
-    if (!cls || pool.length === 0) return;
+  async function buildPdf(): Promise<Uint8Array> {
+    if (!cls || pool.length === 0) throw new Error('No students to group yet');
     downloading = true;
     pdfError = '';
     try {
-      const [{ renderGroupsPdf, groupsPdfFilename }, { loadPdfFonts }] = await Promise.all([
+      const [{ renderGroupsPdf }, { loadPdfFonts }] = await Promise.all([
         import('../lib/pdfGroups'),
         import('../lib/pdfFonts'),
       ]);
@@ -54,7 +59,7 @@
         day: 'numeric',
         year: 'numeric',
       });
-      const bytes = await renderGroupsPdf(grouping.groups, app.names, {
+      return await renderGroupsPdf(grouping.groups, app.names, {
         paper: 'letter',
         orientation: grouping.groups.length > 6 ? 'landscape' : 'portrait',
         nameScale: 1,
@@ -63,20 +68,15 @@
         title: cls.name,
         subtitle: `Groups of ${groupSize} · ${date}`,
       }, fonts);
-      const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = groupsPdfFilename(cls.name);
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      app.toast('Groups PDF saved to your downloads', 'ok');
-    } catch (e) {
-      pdfError = e instanceof Error && e.message ? e.message : 'Could not build the PDF';
     } finally {
       downloading = false;
     }
   }
+
+  const filename = $derived(groupsPdfFilename(cls?.name || 'Class'));
 </script>
+<ToolBoundary tool="group maker">
+
 
 <div class="tool-frame">
   <div class="tool-toolbar">
@@ -106,26 +106,28 @@
         <Icon name="shuffle" size={16} />
         Shuffle groups
       </button>
-      <label class="ctl check"><input type="checkbox" bind:checked={inkSaver} /> Ink saver</label>
-      <button class="btn primary" onclick={() => downloadPdf()} disabled={!cls || downloading || pool.length === 0}>
-        <Icon name="download" size={16} />
-        {downloading ? 'Preparing PDF…' : 'Download PDF'}
-      </button>
+      <label class="ctl check"><input type="checkbox" bind:checked={inkSaver} /> Ink saver (B/W)</label>
+      <ShareActions
+        getBytes={buildPdf}
+        {filename}
+        label="groups"
+        disabled={!cls || downloading || pool.length === 0}
+        onerror={(e) => (pdfError = e instanceof Error && e.message ? e.message : 'Could not build the PDF')}
+      />
     </div>
   </div>
 
   {#if app.isSample}
-    <div data-sample-banner>
-      <span><strong>Sample class.</strong> Explore freely, then replace it with your own roster.</span>
-      <button class="btn primary small" onclick={() => (pasteMode = 'new')}>Use my class list</button>
-    </div>
+    <SampleBanner onreplace={() => (pasteMode = 'new')}>
+      Explore freely, then replace it with your own roster.
+    </SampleBanner>
   {/if}
 
   {#if pdfError}
     <div class="pdf-error" role="alert">
       <Icon name="alert" size={16} />
       <span class="banner-body">{pdfError}</span>
-      <button class="btn small" onclick={() => downloadPdf()}>Try again</button>
+      <button class="btn small" onclick={() => (pdfError = '')}>Dismiss</button>
     </div>
   {/if}
 
@@ -139,8 +141,8 @@
       chart, and every other tool here reuse the same roster.
     </EmptyState>
   {:else if pool.length === 0}
-    <EmptyState compact title="Everyone is marked absent" href="/seating-chart/" actionLabel="Update attendance">
-      There is nobody left to group. Tick “Include absent” in the toolbar to group the whole
+    <EmptyState compact icon="alert" title="Everyone is marked absent" href="/seating-chart/" actionLabel="Update attendance">
+      There is nobody left to group. Check “Include absent” in the toolbar to group the whole
       roster anyway, or update today’s attendance in the seating chart.
     </EmptyState>
   {:else}
@@ -197,6 +199,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+</ToolBoundary>
 
 <style>
   /* Toolbar controls: label and control read as one chunk. */

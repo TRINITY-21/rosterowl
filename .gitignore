@@ -2,3 +2,16 @@ node_modules/
 dist/
 .astro/
 *.log
+
+# Wrangler local state and secrets. .dev.vars holds the Google OAuth client
+# secret for `wrangler dev` — it must never be committed.
+#
+# The .env patterns are belt-and-braces: nothing in this project reads .env, so
+# a secret found in one is a secret in the wrong place — but an ignored wrong
+# place is survivable and a committed one is not.
+.wrangler/
+.dev.vars
+.env
+.env.*
+!.env.example
+env

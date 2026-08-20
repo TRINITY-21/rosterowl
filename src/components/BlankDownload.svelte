@@ -4,48 +4,40 @@
   // so the gallery stays a data list rather than a pile of components.
   import { BLANKS } from '../lib/blanks';
   import { safeFilename } from '../lib/filenames';
-  import Icon from './Icon.svelte';
+  import ShareActions from './ShareActions.svelte';
 
   let { blankKey }: { blankKey: string } = $props();
 
-  let busy = $state(false);
   let error = $state('');
 
-  async function download() {
-    const spec = BLANKS.find((b) => b.key === blankKey);
-    if (!spec || busy) return;
-    busy = true;
+  const spec = $derived(BLANKS.find((b) => b.key === blankKey));
+  const filename = $derived(`${safeFilename(spec?.filename ?? '', 'Blank printable')}.pdf`);
+
+  async function buildPdf(): Promise<Uint8Array> {
+    if (!spec) throw new Error('That blank is no longer available');
     error = '';
-    try {
-      const { loadBlankFonts } = await import('../lib/blanks');
-      const fonts = await loadBlankFonts();
-      const bytes = await spec.render(fonts);
-      const url = URL.createObjectURL(new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${safeFilename(spec.filename, 'Blank printable')}.pdf`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    } catch (e) {
-      error =
-        e instanceof Error && e.message
-          ? e.message
-          : "Couldn't build the PDF — check your connection and try again.";
-    } finally {
-      busy = false;
-    }
+    const { loadBlankFonts } = await import('../lib/blanks');
+    return await spec.render(await loadBlankFonts());
   }
 </script>
 
 <span class="wrap">
-  <button class="btn primary small" onclick={download} disabled={busy}>
-    <Icon name="download" size={15} />
-    {busy ? 'Building…' : 'Download blank PDF'}
-  </button>
+  <ShareActions
+    getBytes={buildPdf}
+    downloadLabel="Download blank PDF"
+    {filename}
+    label="blank printable"
+    compact
+    onerror={(e) =>
+      (error =
+        e instanceof Error && e.message
+          ? e.message
+          : "Couldn't build the PDF — check your connection and try again.")}
+  />
   {#if error}
     <span class="err" role="alert">
       {error}
-      <button class="btn small" onclick={download}>Try again</button>
+      <button class="btn small" onclick={() => (error = '')}>Dismiss</button>
     </span>
   {/if}
 </span>

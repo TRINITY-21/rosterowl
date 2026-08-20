@@ -2,7 +2,7 @@
 import Icon from '../components/Icon.svelte';
 import SiteFooter from '../components/SiteFooter.astro';
 import Layout from '../layouts/Layout.astro';
-import { PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
+import { ALL_TOOLS, PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
 
 // The flagship leads the index; the other two groups follow as compact rows.
 const [, ...otherGroups] = TOOL_GROUPS;
@@ -18,7 +18,7 @@ const steps = [
   },
   {
     title: 'Print all year',
-    copy: 'Every tool reads that same roster, so a certificate, a name tag or a register is one click away — no name typed twice.',
+    copy: 'Every tool reads that same roster, so a certificate, a name tag, or an attendance sheet is one click away — no name typed twice.',
   },
 ];
 
@@ -34,7 +34,7 @@ const chartGroups = [
 
 <Layout
   title="RosterOwl — one roster, every classroom tool"
-  description="Paste your class list once. Free seating charts, group makers and classroom printables — unlimited students, no signup, and student names never leave your browser."
+  description="Paste your class list once. Free seating charts, group makers and classroom printables — unlimited students, no signup, and nothing uploaded unless you turn on sync."
 >
   <main>
     <section class="hero">
@@ -43,14 +43,14 @@ const chartGroups = [
         <p class="sub">
           Paste your class list once. Make seating charts that keep the chatty kids apart,
           shuffle groups, and print clean one-page PDFs — free, with unlimited students, and your
-          students' names <strong>never leave your browser</strong>.
+          students' names <strong>stay on your device</strong> unless you turn on sync.
         </p>
         <div class="cta-row">
           <a class="btn primary large" href={SEATING.href}>
             Make your seating chart
             <Icon name="arrow-right" size={17} />
           </a>
-          <a class="text-link" href="#tools">See all ten tools</a>
+          <a class="text-link" href="#tools">See all {ALL_TOOLS.length} tools</a>
         </div>
         <ul class="facts">
           <li>Free</li>
@@ -122,7 +122,7 @@ const chartGroups = [
 
     <section class="suite" id="tools" aria-labelledby="tools-heading">
       <div class="section-head">
-        <h2 id="tools-heading">Ten tools. One class list.</h2>
+        <h2 id="tools-heading">{ALL_TOOLS.length} tools. One class list.</h2>
         <p>Move from planning to printing without typing the same names twice.</p>
       </div>
 
@@ -167,8 +167,9 @@ const chartGroups = [
         <div>
           <h3>Names stay on your device</h3>
           <p>
-            RosterOwl does its work inside your browser. Your class list is saved on your own
-            computer — no accounts, no servers, nothing for anyone to breach.
+            RosterOwl does its work inside your browser, and your class list is saved on your own
+            computer. No account is needed and nothing is uploaded — unless you switch on sync,
+            which is off until you ask for it.
           </p>
           <a class="text-link" href="/privacy/">See exactly what this site sends</a>
         </div>
@@ -193,7 +194,7 @@ const chartGroups = [
     <section class="closer">
       <div>
         <h2>Start with the seating chart.</h2>
-        <p>Paste a class list and you are two minutes from a printable chart. Nothing to sign up for.</p>
+        <p>Paste a class list and you're two minutes from a printable chart. Nothing to sign up for.</p>
       </div>
       <a class="btn primary large" href={SEATING.href}>
         Make your seating chart
@@ -860,6 +861,7 @@ const chartGroups = [
     margin-top: var(--space-7);
     padding: var(--space-6);
     border: var(--rule);
+    border-left: 3px solid var(--accent);
     border-radius: var(--radius-l);
     background: var(--surface-2);
   }
@@ -922,7 +924,11 @@ const chartGroups = [
       border-left: none;
     }
 
-    .facts li:nth-child(even) {
+    /* `li + li:nth-child(even)`, not `li:nth-child(even)`: Astro scopes every
+       compound with an attribute selector, which left the plain version tied on
+       specificity with the reset above and losing on the extra `li` — so the
+       rule column separator silently never drew. */
+    .facts li + li:nth-child(even) {
       padding-left: 0.85rem;
       border-left: var(--rule);
     }

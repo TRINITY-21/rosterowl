@@ -1,0 +1,20 @@
+{
+  // The Worker is checked separately from the site: it runs on workerd, not in
+  // a browser, so it must not see DOM lib types (a stray `document` reference
+  // would otherwise compile here and fail at the edge).
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["**/*.ts"]
+}

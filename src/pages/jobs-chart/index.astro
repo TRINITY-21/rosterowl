@@ -1,19 +1,19 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Faq from '../../components/Faq.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import MoreTools from '../../components/MoreTools.astro';
 import JobsApp from '../../components/JobsApp.svelte';
-import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+import { toolJsonLd, type FaqEntry } from '../../lib/seo';
 
 const jsonLd = toolJsonLd({
   name: 'RosterOwl Classroom Jobs Chart',
   path: '/jobs-chart/',
   description:
-    'Classroom jobs chart with a fair one-click rotation: assign jobs to your students, rotate so every job changes hands and everyone gets equal turns, and print a one-page poster. Free, no signup — names never leave your browser.',
+    'Classroom jobs chart with a fair one-click rotation: assign jobs to your students, rotate so every job changes hands and everyone gets equal turns, and print a one-page poster. Free, no signup — nothing uploaded unless you turn on sync.',
 });
 
-// Mirrors the visible <section class="faq"> below, verbatim.
-const faqLd = faqJsonLd([
+const faqs: FaqEntry[] = [
   {
     q: `How does the rotation stay fair?`,
     a: `Your class sits in a fixed rotation order and the jobs slide along it. Each rotation hands every job to a new owner, and over a full cycle every student gets exactly the same number of turns. Want a fresh order? "Shuffle crew" re-deals the rotation.`,
@@ -26,15 +26,14 @@ const faqLd = faqJsonLd([
     q: `What about absent students?`,
     a: `Jobs are weekly, so a one-day absence usually sorts itself out. If someone is out for longer, hand their job to a classmate in the dropdown — it's a straight trade, and you can trade back when they return.`,
   },
-]);
+];
 ---
 
 <Layout
   title="Classroom Jobs Chart Maker — Printable | RosterOwl"
-  description="Assign classroom jobs to your students and rotate fairly in one click — every job changes hands, and everyone gets equal turns over the cycle. Print a poster-style chart for the door: one page, big friendly type. Free, no signup — names never leave your browser."
+  description="Assign classroom jobs to your students and rotate fairly in one click — every job changes hands, and everyone gets equal turns over the cycle. Print a poster-style chart for the door: one page, big friendly type. Free, no signup — nothing uploaded unless you turn on sync."
 >
   <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
-  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
 
   <main class="tool-page">
     <div class="page-head">
@@ -42,7 +41,7 @@ const faqLd = faqJsonLd([
       <p>
         Line leader, door holder, paper passer — assigned in one click, rotated fairly every
         week, printed as a poster for the door. Free · no signup ·
-        <a href="/privacy/">names never leave your browser</a>.
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
       </p>
     </div>
 
@@ -62,7 +61,7 @@ const faqLd = faqJsonLd([
           <h3>Fair by construction</h3>
           <p>
             Students sit in a fixed rotation order, so turns even out for everyone — no favorites,
-            no forgotten kids. A new student joins the back of the rotation automatically.
+            no one left out. A new student joins the back of the rotation automatically.
           </p>
         </div>
         <div>
@@ -78,32 +77,7 @@ const faqLd = faqJsonLd([
         </div>
       </div>
 
-      <section class="faq">
-        <h2>Questions teachers ask</h2>
-        <details>
-          <summary>How does the rotation stay fair?</summary>
-          <p>
-            Your class sits in a fixed rotation order and the jobs slide along it. Each rotation
-            hands every job to a new owner, and over a full cycle every student gets exactly the
-            same number of turns. Want a fresh order? "Shuffle crew" re-deals the rotation.
-          </p>
-        </details>
-        <details>
-          <summary>Can I give a specific job to a specific student?</summary>
-          <p>
-            Yes — pick them in that job's dropdown. If they already hold another job, the two
-            students trade places, so nobody ends up with two jobs and the rotation stays fair.
-          </p>
-        </details>
-        <details>
-          <summary>What about absent students?</summary>
-          <p>
-            Jobs are weekly, so a one-day absence usually sorts itself out. If someone is out
-            for longer, hand their job to a classmate in the dropdown — it's a straight trade,
-            and you can trade back when they return.
-          </p>
-        </details>
-      </section>
+      <Faq entries={faqs} />
     </section>
     <MoreTools />
   </main>

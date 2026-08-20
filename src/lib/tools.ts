@@ -61,7 +61,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
         title: 'Group maker',
         icon: 'users',
         blurb: 'Balanced teams that honor your keep-apart rules',
-        copy: 'Split the class into balanced groups that still honor your keep-apart rules.',
+        copy: 'Split the class into balanced groups that honor your keep-apart rules.',
       },
       {
         href: '/picker/',
@@ -69,7 +69,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
         title: 'Student picker',
         icon: 'shuffle',
         blurb: 'Fair cold-calling, nobody picked twice',
-        copy: "Fair cold-calling: no repeats until everyone's had a turn, absent kids skipped.",
+        copy: "Fair cold-calling: no repeats until everyone's had a turn, absent students skipped.",
       },
       {
         href: '/jobs-chart/',
@@ -115,7 +115,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
         title: 'Attendance sheet',
         icon: 'printer',
         blurb: "The month's real school days, pre-built",
-        copy: "The month's real school days across the top, your class down the side — the register, rebuilt in one click.",
+        copy: "The month's real school days across the top, your class down the side — the attendance sheet, rebuilt in one click.",
       },
       {
         href: '/bingo/',

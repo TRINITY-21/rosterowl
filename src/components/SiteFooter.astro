@@ -1,6 +1,7 @@
 ---
 import OwlMark from './OwlMark.svelte';
 import { PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
+import { SITE_PAGES } from '../lib/site';
 
 interface Props {
   note?: string;
@@ -34,7 +35,7 @@ const columns = [
         <span>RosterOwl</span>
       </a>
       <p class="foot-tagline">
-        One roster, every classroom tool. Free, no signup — student names never leave your browser.
+        One roster, every classroom tool. Free, no signup — nothing uploaded unless you turn on sync.
       </p>
       <a class="foot-privacy" href="/privacy/">How privacy works →</a>
     </div>
@@ -51,6 +52,15 @@ const columns = [
   </div>
   <div class="foot-base">
     <span>© {year} RosterOwl · made for teachers{note ? ` · ${note}` : ''}</span>
+    <nav class="foot-pages" aria-label="About this site">
+      {
+        SITE_PAGES.map((p) => (
+          <a href={p.href} aria-current={Astro.url.pathname === p.href ? 'page' : undefined}>
+            {p.label}
+          </a>
+        ))
+      }
+    </nav>
   </div>
 </footer>
 
@@ -132,6 +142,34 @@ const columns = [
     border-top: var(--rule);
     color: var(--muted);
     font-size: var(--text-xs);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  /* About / Privacy / Contact / Terms — the header hides its nav links on
+     narrow screens, so this row is the only reliable path to them on a phone. */
+  .foot-pages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+
+  .foot-pages a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .foot-pages a:hover {
+    color: var(--brand);
+    text-decoration: underline;
+  }
+
+  .foot-pages a[aria-current='page'] {
+    color: var(--ink);
+    font-weight: 700;
   }
 
   @media (max-width: 940px) {

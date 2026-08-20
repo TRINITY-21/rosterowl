@@ -6,7 +6,6 @@ import fontkit from '@pdf-lib/fontkit';
 import type { PDFFont } from 'pdf-lib';
 import { PDFDocument, rgb } from 'pdf-lib';
 import type { PdfFonts, Student } from './types';
-import { safeFilename } from './filenames';
 
 export type NameOrder = 'roster' | 'first' | 'last';
 
@@ -209,8 +208,6 @@ export async function renderChecklistPdf(
   return { bytes: await doc.save(), rows: rows.length };
 }
 
-export function checklistPdfFilename(className: string, title: string): string {
-  const cls = safeFilename(className);
-  const t = safeFilename(title, 'Checklist');
-  return `${cls} — ${t}.pdf`;
-}
+// Lives in filenames.ts so components can name a download without pulling
+// pdf-lib in; re-exported here because that is where callers expect it.
+export { checklistPdfFilename } from "./filenames";

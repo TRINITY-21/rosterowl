@@ -6,26 +6,37 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check",
+    "check": "astro check && npm run check:worker",
+    "icons": "node tools/icons/generate.mjs",
+    "og": "node --experimental-strip-types --import ./tools/ts-resolve.mjs tools/og/generate.mjs",
     "test": "vitest run",
     "test:browser": "npm run build && node tests/run-browser-ci.mjs",
     "verify": "npm run check && npm test && npm run build",
-    "test:ci": "npm run verify && node tests/run-browser-ci.mjs"
+    "test:ci": "npm run verify && node tests/run-browser-ci.mjs",
+    "check:worker": "tsc -p worker",
+    "db:migrate:local": "wrangler d1 migrations apply rosterowl --local",
+    "db:migrate": "wrangler d1 migrations apply rosterowl --remote",
+    "dev:worker": "wrangler dev",
+    "deploy": "PUBLIC_CF_BEACON_TOKEN=bce1320fb02248bcb4de6a317788c00b npm run build && wrangler deploy"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
     "papaparse": "^5.4.1",
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.2.108"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@astrojs/sitemap": "^3.7.3",
     "@astrojs/svelte": "^7.0.0",
+    "@cloudflare/workers-types": "^5.20260820.1",
     "@types/papaparse": "^5.3.14",
+    "@vite-pwa/astro": "^1.2.0",
     "astro": "^5.0.0",
     "playwright": "^1.62.1",
     "svelte": "^5.0.0",
     "typescript": "^5.6.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "wrangler": "^4.124.0"
   }
 }

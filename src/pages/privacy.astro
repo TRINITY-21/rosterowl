@@ -1,95 +1,126 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import SiteFooter from '../components/SiteFooter.astro';
+import TextPage from '../layouts/TextPage.astro';
 ---
 
-<Layout
+<TextPage
   title="What this site sends — RosterOwl privacy"
-  description="Exactly what RosterOwl sends over the network — and what it never sends: your class list. Student names stay in your browser."
+  description="Exactly what RosterOwl sends over the network, and when. Your class list stays on your device unless you switch on sync — and this page says precisely what sync stores."
+  heading="What this site sends"
+  lede="The short version: <strong>your class list stays on your device unless you switch on sync</strong>, which is off until you ask for it. Here is the complete, checkable list of network activity on rosterowl.com."
 >
-  <main>
-    <h1>What this site sends</h1>
-    <p class="lede">
-      The short version: <strong>your class list never leaves your browser.</strong> Here is the
-      complete, checkable list of network activity on rosterowl.com.
-    </p>
+  <h2>What the site loads</h2>
+  <ul>
+    <li>
+      Its own pages, code, icons and six font files (three for the screen, three for building your
+      PDFs) — all served from rosterowl.com. No CDNs, no cookies, and no third-party code except the
+      page counter described below.
+    </li>
+    <li>
+      <strong>Cloudflare Web Analytics</strong> (a script called <code>beacon.min.js</code>), which
+      counts page loads and page-speed measurements. It sets no cookies, does not follow you between
+      sites, and cannot see anything you type. It is the only third-party request on the site.
+    </li>
+  </ul>
 
-    <h2>What the site loads</h2>
-    <ul>
-      <li>Its own pages, code, and six font files (three for the screen, three for building your PDFs) — all served from rosterowl.com. No third-party scripts, no CDNs, no trackers, no cookies.</li>
-    </ul>
+  <h2>What the site sends — with sync off</h2>
+  <p>
+    This is the default, and it is what happens until you sign in. Nothing changes it by accident.
+  </p>
+  <ul>
+    <li>
+      <strong>Nothing containing your data.</strong> After the page loads, the tools work entirely
+      inside your browser. Student names, rules, absences, job rotations, word lists and charts are
+      processed on your device and stored in your browser's local storage.
+    </li>
+    <li>
+      A page-view ping to Cloudflare containing the address of the page, the referring page, and
+      general details of your browser and country. No names, no roster, no identifiers that follow
+      you around.
+    </li>
+  </ul>
 
-    <h2>What the site sends</h2>
-    <ul>
-      <li>
-        <strong>Nothing containing your data.</strong> After the page loads, the tools work
-        entirely inside your browser. Student names, rules, absences, job rotations, word lists
-        and charts are processed on your device and stored in your browser's local storage. There is no account system and no
-        database.
-      </li>
-    </ul>
+  <h2>Sync, if you switch it on</h2>
+  <p>
+    Sync exists for one situation: you started a chart at school and want to finish it at home.
+    It is <strong>off unless you sign in</strong>, and signing in is something you have to go and
+    do — there is no prompt, no wall, and no reminder. Everything on this site works without it.
+  </p>
+  <p>Once it is on, here is exactly what changes, stated plainly:</p>
+  <ul>
+    <li>
+      <strong>Your class list is uploaded.</strong> The same document your browser stores — class
+      and room names, your students' names, seating, keep-apart rules, absences, jobs and word
+      lists — is sent to rosterowl.com and stored in a Cloudflare database so your other computer
+      can fetch it. It is stored as ordinary text, which means <strong
+        >we are technically able to read it</strong
+      >. We do not, and nothing in the site is built to, but you should choose knowing that rather
+      than trusting a promise.
+    </li>
+    <li>
+      <strong>We ask Google who you are, and nothing else.</strong> Signing in uses your Google
+      account with the narrowest possible permissions: your account identifier and your email
+      address. No Drive, no contacts, no calendar, no profile. RosterOwl never sees your Google
+      password.
+    </li>
+    <li>
+      <strong>One cookie appears.</strong> A sign-in cookie that JavaScript cannot read, used only
+      to recognise your browser on the next visit. There is still no advertising or tracking cookie
+      of any kind.
+    </li>
+    <li>
+      <strong>You can undo it.</strong> "Delete cloud copy" in the sync menu erases the stored
+      document. "Sign out of sync" stops the uploading. Either way the classes on the device in
+      front of you are untouched — sync is a copy, never the original.
+    </li>
+  </ul>
 
-    <h2>How to verify this yourself</h2>
-    <ol>
-      <li>Open your browser's developer tools (F12) and switch to the Network tab.</li>
-      <li>Load the seating chart tool, paste a class list, shuffle, download a PDF.</li>
-      <li>
-        Watch the requests: after the initial page load you'll see no requests carrying your data —
-        try it with your Wi-Fi off; the tool keeps working.
-      </li>
-    </ol>
+  <h2>The browser enforces the boundary, not just us</h2>
+  <p>
+    Every page is served with a Content-Security-Policy header that limits where this site is
+    allowed to send anything at all — to rosterowl.com and the analytics endpoint, and nowhere else.
+    If our own code ever tried to post a class list to a third party, <strong
+      >your browser would block the request</strong
+    >. That was true before sync existed and is still true now: what sync changed is that
+    rosterowl.com itself receives your document when you have signed in, and only then. You can read
+    the policy yourself in the Network tab, under the response headers for any page.
+  </p>
 
-    <h2>If this ever changes</h2>
-    <p>
-      Today there are no analytics at all. The one thing we may add is Cloudflare's cookieless
-      page-view counter (a script called <code>beacon.min.js</code>) — it counts page loads and Web
-      Vitals, sets no cookies, and cannot see anything you type. If and when it's enabled, this
-      paragraph will say so in the same deploy. Nothing else gets added without appearing here
-      first. This page is the contract.
-    </p>
+  <h2>How to verify this yourself</h2>
+  <ol>
+    <li>Open your browser's developer tools (F12) and switch to the Network tab.</li>
+    <li>Load the seating chart tool, paste a class list, shuffle, download a PDF.</li>
+    <li>
+      Watch the requests: signed out, apart from the page itself and the Cloudflare page-view ping,
+      nothing leaves — and nothing that leaves carries your data. Then try it with your Wi-Fi off;
+      the tools keep working.
+    </li>
+    <li>
+      Signed in, you will additionally see requests to <code>/api/doc</code> on rosterowl.com. That
+      is your class list going to and from your own account, and it is the only thing sync sends.
+    </li>
+  </ol>
 
-    <h2>Backups</h2>
-    <p>
-      "Save backup file" downloads your data to your own computer as a plain JSON file you control.
-      Restoring reads that file locally. It is never transmitted anywhere.
-    </p>
-  </main>
-  <SiteFooter />
-</Layout>
+  <h2>If this ever changes</h2>
+  <p>
+    Nothing else gets added without appearing here first, in the same deploy that adds it. This page
+    is the contract. If you find it out of date, that's a bug worth
+    <a href="/contact/">reporting</a>.
+  </p>
 
-<style>
-  main {
-    max-width: 42rem;
-    margin: 0 auto;
-    padding: var(--space-5) var(--page-gutter) var(--space-8);
-  }
-  h1 {
-    font-size: var(--text-2xl);
-    letter-spacing: -0.015em;
-  }
-  .lede {
-    font-size: var(--text-lg);
-    color: var(--muted);
-  }
-  .lede strong {
-    color: var(--ink);
-  }
-  h2 {
-    font-size: var(--text-xl);
-    margin-top: var(--space-6);
-  }
-  ul,
-  ol {
-    color: var(--muted);
-    padding-left: 1.3rem;
-  }
-  li {
-    margin: var(--space-2) 0;
-  }
-  li strong {
-    color: var(--ink);
-  }
-  p {
-    color: var(--muted);
-  }
-</style>
+  <h2>Backups</h2>
+  <p>
+    "Save backup file" downloads your data to your own computer as a plain JSON file you control.
+    Restoring reads that file locally. It is never transmitted anywhere, whether or not sync is on —
+    and it remains the way to keep a copy that depends on nobody.
+  </p>
+
+  <h2>Schools and districts</h2>
+  <p>
+    If you're evaluating RosterOwl for a school, the distinction that usually matters is this:
+    <strong>used as it comes, RosterOwl stores no student data outside the teacher's own device.</strong>
+    Sync is the one feature that changes that, it is opt-in per teacher, and it can be switched off
+    and its stored copy deleted at any time.
+    <a href="/about/#student-data">The FERPA and COPPA summary is on the about page</a>, and we're
+    happy to complete a vendor questionnaire — <a href="/contact/">just ask</a>.
+  </p>
+</TextPage>

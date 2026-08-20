@@ -10,6 +10,12 @@
   const CELL = 64;
   const DESK_W = CELL * 0.98;
   const DESK_H = CELL * 0.8;
+  /** How far a chair sticks out below its desk. The tightest gap in any
+   *  template is a table cluster's 1.1-unit row pitch — 19.2px between desks —
+   *  so this has to stay well under that or chairs collide with the row behind. */
+  const CHAIR_DROP = 10;
+  /** Table slab overhang around the desks sitting on it. */
+  const TABLE_PAD = 12;
   const MIN_ZOOM = 0.4;
   const MAX_ZOOM = 2;
 
@@ -43,10 +49,18 @@
       const xs = desks.map((d) => d.x);
       const ys = desks.map((d) => d.y);
       hulls.push({
-        x: gx(Math.min(...xs)) - 10,
-        y: gy(Math.min(...ys)) - 10,
-        w: (Math.max(...xs) - Math.min(...xs)) * CELL + DESK_W + 20,
-        h: (Math.max(...ys) - Math.min(...ys)) * CELL + DESK_H + 20,
+        x: gx(Math.min(...xs)) - TABLE_PAD,
+        y: gy(Math.min(...ys)) - TABLE_PAD,
+        w: (Math.max(...xs) - Math.min(...xs)) * CELL + DESK_W + 2 * TABLE_PAD,
+        // Taller at the bottom: the back row's chairs sit CHAIR_DROP below their
+        // desks, and a chair hanging off the front edge of the table reads as a
+        // drawing mistake rather than as furniture.
+        h:
+          (Math.max(...ys) - Math.min(...ys)) * CELL +
+          DESK_H +
+          TABLE_PAD +
+          CHAIR_DROP +
+          TABLE_PAD,
         color: GROUP_HUES[i++ % GROUP_HUES.length],
       });
     }
@@ -413,7 +427,7 @@
       {#each groupHulls as hull}
         <div
           class="hull"
-          style="left:{hull.x}px;top:{hull.y}px;width:{hull.w}px;height:{hull.h}px;background:color-mix(in srgb, var({hull.color}) 11%, transparent);border-color:color-mix(in srgb, var({hull.color}) 32%, transparent)"
+          style="left:{hull.x}px;top:{hull.y}px;width:{hull.w}px;height:{hull.h}px;--hue:var({hull.color})"
         ></div>
       {/each}
 
@@ -452,6 +466,7 @@
           class:selected={app.selectedDeskId === desk.id}
           class:conflict={sid ? conflictStudents.has(sid) : false}
           class:absent={student?.absent}
+          class:dropping={!sid && drag.current?.kind === 'student'}
           data-desk-id={desk.id}
           style="left:{gx(desk.x)}px;top:{gy(desk.y)}px;width:{DESK_W}px;height:{DESK_H}px"
           role="button"
@@ -478,10 +493,14 @@
           }}
         >
           {#if student}
-            <span class="name">{app.names.get(student.id)}</span>
+            <span class="plate"><span class="name">{app.names.get(student.id)}</span></span>
           {:else}
             <span class="plus" aria-hidden="true">+</span>
           {/if}
+          <!-- The chair. Decorative, but it is what turns a rounded rectangle
+               into a seat — and it is why an unseated room can go quiet: an
+               empty desk keeps its chair instead of shouting a plus sign. -->
+          <i class="chair" aria-hidden="true"></i>
           {#if locked}
             <span class="lock" title="Locked — shuffle won't move this seat">
               <Icon name="lock" size={10} stroke={2.6} /><span class="sr-only">Locked</span>
@@ -518,18 +537,25 @@
       <Icon name="home" size={16} />
       <span class="reset-label">Reset view</span>
     </button>
-    <span class="pill-divider" aria-hidden="true"></span>
-    <button
-      class="pill-snap"
-      class:on={app.snap}
-      aria-pressed={app.snap}
-      aria-label="Snap desks to the grid"
-      title={app.snap ? 'Snap to grid: on' : 'Snap to grid: off — free placement'}
-      onclick={() => (app.snap = !app.snap)}
-    >
-      <Icon name="magnet" size={17} />
-      <span class="snap-label">Snap</span>
-    </button>
+    <!-- Snap governs how far a dragged desk travels per step, so it only means
+         anything while desks can be dragged. In seat mode it was the loudest
+         control on the canvas — solid amber — and the only one that could not
+         do anything. Hidden rather than disabled: a greyed-out control still
+         pulls the eye, and the mode switch is a few inches away. -->
+    {#if app.mode === 'arrange'}
+      <span class="pill-divider" aria-hidden="true"></span>
+      <button
+        class="pill-snap"
+        class:on={app.snap}
+        aria-pressed={app.snap}
+        aria-label="Snap desks to the grid"
+        title={app.snap ? 'Snap to grid: on' : 'Snap to grid: off — free placement'}
+        onclick={() => (app.snap = !app.snap)}
+      >
+        <Icon name="magnet" size={17} />
+        <span class="snap-label">Snap</span>
+      </button>
+    {/if}
   </div>
 
   {#if selectedDesk && app.mode === 'seat' && !drag.current}
@@ -620,13 +646,21 @@
     display: flex;
     flex-direction: column;
   }
+  /* Graph paper, drawn on the scrolling surface rather than on the room, so it
+     covers every pixel a teacher can scroll to instead of stopping at the
+     furniture. Fine rule every 16px, stronger every 64px — the desk cell — so
+     the paper doubles as a sense of scale while a desk is being dragged. */
   .scroller {
     flex: 1;
     display: grid;
     overflow: auto;
-    background: var(--canvas-bg);
-    background-image: radial-gradient(var(--canvas-dot) 1.2px, transparent 1.2px);
-    background-size: 24px 24px;
+    background-color: var(--canvas-bg);
+    background-image:
+      linear-gradient(to right, var(--canvas-rule) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--canvas-rule) 1px, transparent 1px),
+      linear-gradient(to right, var(--canvas-rule-fine) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--canvas-rule-fine) 1px, transparent 1px);
+    background-size: 64px 64px, 64px 64px, 16px 16px, 16px 16px;
     border-radius: var(--radius-l);
     border: 1px solid var(--line);
     overscroll-behavior: contain;
@@ -709,31 +743,68 @@
     background: color-mix(in srgb, var(--accent) 88%, black);
   }
 
+  /* The table slab. Four desks sitting on one surface is what makes a table
+     group read as a table — the tinted halo this replaced only ever said
+     "these four are related", which the seating already said. */
   .hull {
     position: absolute;
-    border-radius: 16px;
-    border: 1px solid transparent;
+    border-radius: 14px;
+    border: 1px solid var(--table-edge);
+    background: linear-gradient(180deg, var(--table-top), var(--table-bottom));
+    box-shadow: 0 2px 3px var(--table-shadow), 0 12px 22px var(--table-shadow);
     pointer-events: none;
   }
+  /* Where the table meets the floor. */
+  .hull::after {
+    content: '';
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: -9px;
+    height: 12px;
+    background: radial-gradient(50% 100% at 50% 0, var(--table-contact), transparent 72%);
+  }
+  /* Group colour as a solid tab on the table's edge rather than a wash over
+     the whole slab: louder per pixel, and it leaves the tabletop a tabletop. */
+  .hull::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 14px;
+    width: clamp(3rem, 42%, 6rem);
+    height: 5px;
+    border-radius: 0 0 5px 5px;
+    background: var(--hue);
+    /* Reads as painted onto the table edge rather than stuck above it. */
+    box-shadow: 0 1px 2px var(--table-shadow);
+  }
+
   .desk {
     position: absolute;
     display: grid;
     place-items: center;
-    background: var(--desk-fill);
-    border: 1.5px solid var(--desk-line);
-    border-radius: 10px;
-    box-shadow: var(--shadow-1);
+    background: linear-gradient(180deg, var(--desk-top), var(--desk-bottom));
+    border: 1px solid var(--desk-line);
+    border-radius: 7px;
+    box-shadow: 0 1px 2px var(--table-shadow), 0 5px 10px var(--table-shadow);
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
     cursor: grab;
-    transition: border-color 100ms ease, box-shadow 100ms ease;
+    transition: border-color 100ms ease, box-shadow 100ms ease, transform 100ms ease;
+  }
+  /* A pointer-only lift: on a touch screen :hover sticks after a tap, and a
+     desk left floating is a desk the teacher thinks they are still dragging. */
+  @media (hover: hover) {
+    .desk:hover {
+      transform: translateY(-1px);
+    }
   }
   .desk.empty {
-    background: transparent;
+    background: color-mix(in srgb, var(--desk-top) 72%, transparent);
     border-style: dashed;
     border-color: var(--desk-empty-line);
-    box-shadow: none;
+    box-shadow: 0 1px 2px var(--table-shadow);
     cursor: pointer;
     touch-action: auto; /* empty desks let touch users pan the canvas */
   }
@@ -742,6 +813,25 @@
     box-shadow: var(--shadow-2);
   }
   .desk.empty:hover {
+    box-shadow: none;
+  }
+
+  /* The chair, tucked under the desk. CHAIR_DROP in the script keeps this
+     clear of the row behind — the tightest template pitch leaves 19px. */
+  .chair {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56%;
+    height: 8px;
+    border-radius: 3px 3px 8px 8px;
+    background: var(--chair);
+    box-shadow: 0 2px 3px var(--table-contact);
+    pointer-events: none;
+  }
+  .desk.empty .chair {
+    opacity: 0.5;
     box-shadow: none;
   }
   .desk.selected {
@@ -756,31 +846,64 @@
     color: var(--muted);
     text-decoration: line-through;
   }
+  /* The name plate on the desk. A real one is a card standing on the desktop,
+     which is exactly the job this does — it separates the name from the
+     furniture so both stay readable. */
+  /* A fixed width, not max-content: identical plates in a row read as desk
+     plates, ragged pills read as chips. It also has to leave the name the same
+     text budget it had before the plate existed — the desk is only 63px wide,
+     and a plate with comfortable padding was breaking "Jackson" across two
+     lines. Border and padding are therefore as thin as they can be. */
+  .plate {
+    width: calc(100% - 4px);
+    padding: 2px;
+    border-radius: 4px;
+    background: var(--plate-bg);
+    border: 1px solid var(--plate-line);
+    box-shadow: 0 1px 1px var(--table-shadow);
+  }
   .name {
-    font-size: 0.82rem;
+    display: block;
+    font-size: 0.78rem;
     font-weight: 700;
     text-align: center;
-    line-height: 1.1;
-    padding: 0 4px;
+    line-height: 1.15;
     overflow-wrap: anywhere;
   }
+  /* An empty desk is a chair and a clear desktop — a room of them reads as an
+     unseated room, not as thirty plus signs. The plus is an affordance, so it
+     comes back the moment the teacher could act on it: pointing at the desk,
+     tabbing to it, or dragging a student anywhere on the canvas. */
   .plus {
     color: var(--muted);
-    opacity: 0.6;
+    opacity: 0;
     font-size: 1.1rem;
+    transition: opacity var(--motion-fast) ease;
   }
+  .desk:hover .plus,
+  .desk:focus-visible .plus,
+  .desk.dropping .plus {
+    opacity: 0.65;
+  }
+  .desk.dropping {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  }
+  /* Tucked into the desk's own top-left corner, opposite the zone dots. It
+     used to hang 8px outside the desk, which put it over the table's edge on
+     every left-hand seat and needed a ring in the table's colour to stay
+     legible — a ring that was then wrong for desks with no table under them. */
   .lock {
     position: absolute;
-    top: -8px;
-    left: -8px;
-    width: 1.2rem;
-    height: 1.2rem;
+    top: 2px;
+    left: 2px;
+    width: 0.95rem;
+    height: 0.95rem;
     display: grid;
     place-items: center;
     border-radius: 50%;
     background: var(--brand);
     color: var(--on-brand);
-    box-shadow: 0 0 0 2px var(--canvas-bg);
   }
   .zones {
     position: absolute;
@@ -790,10 +913,12 @@
     gap: 3px;
   }
   .zone {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    box-shadow: 0 0 0 1.5px var(--desk-fill);
+    /* Punched out of the desktop it sits on — which is the desk, whether or not
+       that desk is on a table. */
+    box-shadow: 0 0 0 1.5px var(--desk-top);
   }
   .zone.near-teacher {
     background: var(--accent);
@@ -801,6 +926,9 @@
   .zone.away-from-door {
     background: var(--g-violet);
   }
+  /* Solid objects on the floor, not dashed labels floating over it — the room
+     now has furniture in it, and a ghost pill beside a real table read as a
+     leftover from the old drawing. */
   .marker {
     position: absolute;
     display: inline-flex;
@@ -808,26 +936,33 @@
     gap: 0.3rem;
     background: var(--surface);
     color: var(--muted);
-    border: 1px dashed var(--line-strong);
-    border-radius: var(--radius-pill);
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
     font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 4px 12px;
+    padding: 7px 16px;
     min-height: auto;
+    box-shadow: 0 2px 3px var(--table-shadow), 0 8px 16px var(--table-shadow);
     user-select: none;
     touch-action: none;
   }
   .marker.teacher {
-    background: var(--brand-soft);
-    border-color: color-mix(in srgb, var(--brand) 45%, transparent);
-    color: var(--brand-strong);
+    background: linear-gradient(180deg, var(--brand-strong), var(--brand));
+    border-color: var(--brand-strong);
+    color: var(--on-brand);
   }
+  /* Deliberately not amber. The canvas only has room for a few meanings in
+     colour, and amber already carries two that a teacher has to act on:
+     the near-teacher zone marker, and --warn on a seating conflict. A door is
+     neither — it is a landmark, like the teacher desk — so it takes a neutral
+     object with a heavy hinge edge and lets amber keep meaning "look at this". */
   .marker.door {
-    background: var(--accent-soft);
-    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-    color: var(--warn);
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border-color: var(--line-strong);
+    border-left: 4px solid var(--line-strong);
+    color: var(--ink);
   }
   .arrange .marker {
     cursor: grab;
