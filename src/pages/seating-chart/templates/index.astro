@@ -48,6 +48,8 @@ const cards = TEMPLATES.map((t) => {
   return {
     key: t.key,
     label: t.label,
+    title: t.title,
+    hint: t.hint,
     href: LANDING[t.key] ?? `/seating-chart/?preset=${encodeURIComponent(t.key)}`,
     ...previewSvg(desks, t.label),
   };
@@ -78,20 +80,18 @@ const cards = TEMPLATES.map((t) => {
       </p>
     </div>
 
-    <div class="grid">
+    <div class="blank-gallery">
       {cards.map((c) => (
         <div class="card">
           <div class="preview" set:html={c.svg} />
-          <div class="row">
-            <div>
-              <h2>{c.label.split(' — ')[0]}</h2>
-              <p>{c.label.split(' — ')[1] ?? `${c.count} desks`}</p>
-            </div>
+          <div class="body">
+            <h2>{c.title}</h2>
+            <p>{c.hint}</p>
             <div class="actions">
-              <a class="btn small" href={c.href} aria-label={`Open ${c.label} in the seating chart maker`}>
-                Open in maker
-              </a>
               <TemplateDownload client:load templateKey={c.key} label={c.label} />
+              <a class="filled" href={c.href} aria-label={`Open ${c.label} in the seating chart maker`}>
+                Or fill it with your class list
+              </a>
             </div>
           </div>
         </div>
@@ -115,50 +115,7 @@ const cards = TEMPLATES.map((t) => {
 
 <style>
   /* Page width, gutters and the heading block come from .tool-page and
-     .page-head in global.css — nothing local may override them. */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    gap: var(--space-4);
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-l);
-    box-shadow: var(--shadow-1);
-    padding: var(--space-4);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-  .preview {
-    background: var(--canvas-bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    padding: var(--space-3);
-    display: grid;
-    place-items: center;
-    min-height: 9rem;
-  }
-  .preview :global(svg) {
-    width: 100%;
-    max-height: 9rem;
-  }
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-  }
-  .row h2 {
-    font-size: var(--text-base);
-  }
-  .row p {
-    margin: var(--space-1) 0 0;
-    color: var(--muted);
-    font-size: var(--text-sm);
-  }
+     .page-head in global.css; the cards come from .blank-gallery. */
   .upsell {
     max-width: var(--content-narrow);
     margin-top: var(--space-7);
@@ -173,11 +130,5 @@ const cards = TEMPLATES.map((t) => {
   .upsell p {
     color: var(--muted);
     margin-bottom: 0;
-  }
-  .actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: var(--space-2);
   }
 </style>

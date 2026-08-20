@@ -7,6 +7,8 @@
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
   import EmptyState from './EmptyState.svelte';
+  import PresetPicker from './PresetPicker.svelte';
+  import { WORD_LIST_PRESETS } from '../lib/presets';
   import Icon from './Icon.svelte';
   import PdfPreview from './PdfPreview.svelte';
 
@@ -101,6 +103,13 @@
     seededFor = id;
     customText = untrack(() => app.activeClass?.wordLists.bingo ?? '');
   });
+
+  /** A preset implies the custom source, or the list would fill an unseen field. */
+  function applyWordList(value: string) {
+    mode = 'custom';
+    customText = value;
+    app.setWordList('bingo', value);
+  }
 
   async function generate(): Promise<Uint8Array | null> {
     const c = app.activeClass;
@@ -222,6 +231,12 @@
             <option value="custom">My own word list</option>
           </select>
         </label>
+        <PresetPicker
+          label="Ready-made word lists"
+          presets={WORD_LIST_PRESETS}
+          onpick={(p) => applyWordList(p.value)}
+        />
+
         {#if mode === 'custom'}
           <label class="print-opt">
             Card title

@@ -1,7 +1,8 @@
 <!-- RosterOwl classroom jobs chart tool -->
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
-  import { JOB_PRESET } from '../lib/jobs';
+  import { JOB_PRESETS, type Preset } from '../lib/presets';
+  import PresetPicker from './PresetPicker.svelte';
   import PasteModal from './PasteModal.svelte';
   import Icon from './Icon.svelte';
   import Toasts from './Toasts.svelte';
@@ -168,15 +169,16 @@
    * same contract as app.rotateJobs. The class is captured by reference so undo
    * restores this class's list even if another class is active when it's clicked.
    */
-  function applyPreset() {
+  function applyPreset(preset: Preset<string[]> = JOB_PRESETS[0]) {
     const c = app.activeClass;
     if (!c) return;
     const prev = [...c.jobs.titles];
-    app.applyJobPreset(JOB_PRESET);
+    const titles = preset.value;
+    app.applyJobPreset(titles);
     app.toast(
       prev.length
-        ? `Replaced ${prev.length} job${prev.length === 1 ? '' : 's'} with the ${JOB_PRESET.length} classics`
-        : `${JOB_PRESET.length} classic jobs added`,
+        ? `Replaced ${prev.length} job${prev.length === 1 ? '' : 's'} with ${preset.label} (${titles.length})`
+        : `${titles.length} jobs added — ${preset.label}`,
       'ok',
       {
         label: 'Undo',
@@ -214,6 +216,12 @@
   {:else}
     <div class="print-grid jobs-grid">
       <div class="print-options">
+        <PresetPicker
+          label="Ready-made job sets"
+          presets={JOB_PRESETS}
+          onpick={(p) => applyPreset(p)}
+        />
+
         {#if jobCount > 0}
           <div class="job-rows" role="group" aria-label="Jobs and who does them">
             {#each titles as jobTitle, i}
@@ -334,8 +342,8 @@
             <EmptyState
               compact
               title="No jobs on the chart yet"
-              actionLabel={`Add the ${JOB_PRESET.length} classic jobs`}
-              onaction={applyPreset}
+              actionLabel={`Add the ${JOB_PRESETS[0].value.length} classic jobs`}
+              onaction={() => applyPreset()}
             >
               Add one on the left, or start from the classics — line leader, door holder, paper
               passer and friends. Rename or remove any of them afterwards; the poster preview

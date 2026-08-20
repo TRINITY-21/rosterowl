@@ -7,6 +7,8 @@
   import ClassSwitcher from './ClassSwitcher.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import PresetPicker from './PresetPicker.svelte';
+  import { CHECKLIST_PRESETS } from '../lib/presets';
   import Icon from './Icon.svelte';
 
   app.load();
@@ -50,8 +52,9 @@
     columns = next;
   }
 
-  function presetWeekdays() {
-    columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  function applyColumnPreset(value: string[]) {
+    // Assigning a new array changes the count select too — it reads length.
+    columns = [...value];
   }
 
   function opts() {
@@ -171,6 +174,12 @@
           Title
           <input bind:value={title} maxlength="80" placeholder="e.g. Permission slips" />
         </label>
+        <PresetPicker
+          label="Ready-made checklists"
+          presets={CHECKLIST_PRESETS}
+          onpick={(p) => applyColumnPreset(p.value)}
+        />
+
         <label class="print-opt">
           Columns
           <select value={String(columns.length)} onchange={(e) => setColumnCount(Number(e.currentTarget.value))}>
@@ -187,7 +196,7 @@
               type="button"
               class="btn small quiet"
               aria-label="Fill the columns with Mon–Fri"
-              onclick={() => presetWeekdays()}
+              onclick={() => applyColumnPreset(['Mon', 'Tue', 'Wed', 'Thu', 'Fri'])}
             >
               Mon–Fri
             </button>

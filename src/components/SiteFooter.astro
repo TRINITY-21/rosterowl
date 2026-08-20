@@ -1,6 +1,6 @@
 ---
 import OwlMark from './OwlMark.svelte';
-import { SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
+import { PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
 
 interface Props {
   note?: string;
@@ -14,6 +14,7 @@ const [, ...otherGroups] = TOOL_GROUPS;
 const planLinks = [
   { href: SEATING.href, label: SEATING.title },
   ...SEATING_VARIANTS.map((v) => ({ href: v.href, label: v.label })),
+  { href: PRINTABLES.href, label: PRINTABLES.label },
 ];
 const columns = [
   { key: 'plan', label: 'Plan the room', links: planLinks },

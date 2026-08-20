@@ -39,8 +39,11 @@ export const SEATING_VARIANTS = [
   { href: '/seating-chart/u-shape/', label: 'U-shape / horseshoe' },
   { href: '/seating-chart/keep-students-apart/', label: 'Keep students apart' },
   { href: '/seating-chart/for-substitutes/', label: 'For substitutes' },
-  { href: '/seating-chart/templates/', label: 'Blank templates' },
+  { href: '/seating-chart/templates/', label: 'Blank seating charts' },
 ] as const;
+
+/** The blank-printables hub. Linked wherever the variants are. */
+export const PRINTABLES = { href: '/printables/', label: 'Blank printables' } as const;
 
 export const TOOL_GROUPS: ToolGroup[] = [
   {

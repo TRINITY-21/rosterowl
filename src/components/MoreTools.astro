@@ -3,7 +3,7 @@
 // and drops whichever tool the reader is already on, so it never links to the
 // current page and never needs updating when a tool is added.
 import Icon from './Icon.svelte';
-import { ALL_TOOLS, SEATING_VARIANTS, activeToolHref } from '../lib/tools';
+import { ALL_TOOLS, PRINTABLES, SEATING_VARIANTS, activeToolHref } from '../lib/tools';
 
 interface Props {
   /** Heading override, for pages where the default reads oddly. */
@@ -42,8 +42,8 @@ const showVariants = current !== '/seating-chart/';
 
   {showVariants && (
     <p class="mt-variants">
-      <span>Pre-configured seating charts:</span>
-      {SEATING_VARIANTS.map((v) => (
+      <span>Ready to print:</span>
+      {[...SEATING_VARIANTS, PRINTABLES].map((v) => (
         <a href={v.href}>{v.label}</a>
       ))}
     </p>

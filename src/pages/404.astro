@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Icon from '../components/Icon.svelte';
 import OwlMark from '../components/OwlMark.svelte';
 import SiteFooter from '../components/SiteFooter.astro';
-import { SEATING, TOOL_GROUPS } from '../lib/tools';
+import { PRINTABLES, SEATING, TOOL_GROUPS } from '../lib/tools';
 
 // Every tool, not a stale subset — a wrong URL should still reach all ten.
 const [, ...otherGroups] = TOOL_GROUPS;
@@ -38,7 +38,13 @@ const rest = otherGroups.flatMap((g) => g.tools);
         <li>
           <a href="/seating-chart/templates/">
             <Icon name="file" size={16} />
-            Blank templates
+            Blank seating charts
+          </a>
+        </li>
+        <li>
+          <a href={PRINTABLES.href}>
+            <Icon name="printer" size={16} />
+            {PRINTABLES.label}
           </a>
         </li>
       </ul>

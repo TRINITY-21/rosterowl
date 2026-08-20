@@ -119,7 +119,12 @@ export function makeUShape(width: number, depth: number): Desk[] {
 
 export interface TemplateDef {
   key: string;
+  /** Full name. Used for the PDF title and file name — do not reword lightly. */
   label: string;
+  /** Short card heading; distinguishes the two row and two U-shape variants. */
+  title: string;
+  /** One line on when a teacher would pick this layout. */
+  hint: string;
   make: () => Desk[];
 }
 
@@ -140,12 +145,60 @@ export function desksMatchTemplate(desks: Desk[], key: string): boolean {
 }
 
 export const TEMPLATES: TemplateDef[] = [
-  { key: 'rows-5x6', label: 'Rows — 5 × 6 (30 desks)', make: () => makeRows(5, 6) },
-  { key: 'rows-6x5', label: 'Rows — 6 × 5 (30 desks)', make: () => makeRows(6, 5) },
-  { key: 'groups4-6', label: 'Table groups of 4 — 6 tables (24)', make: () => makeGroups(6, 4) },
-  { key: 'groups4-8', label: 'Table groups of 4 — 8 tables (32)', make: () => makeGroups(8, 4) },
-  { key: 'groups6-5', label: 'Table groups of 6 — 5 tables (30)', make: () => makeGroups(5, 6) },
-  { key: 'pairs-12', label: 'Pairs — 12 pairs (24)', make: () => makeGroups(12, 2) },
-  { key: 'u-20', label: 'U-shape — 20 desks', make: () => makeUShape(8, 6) },
-  { key: 'u-26', label: 'U-shape — 26 desks', make: () => makeUShape(10, 8) },
+  {
+    key: 'rows-5x6',
+    label: 'Rows — 5 × 6 (30 desks)',
+    title: 'Rows — 5 across',
+    hint: '30 desks in six rows of five. The deep, front-facing layout for tests and direct instruction.',
+    make: () => makeRows(5, 6),
+  },
+  {
+    key: 'rows-6x5',
+    label: 'Rows — 6 × 5 (30 desks)',
+    title: 'Rows — 6 across',
+    hint: '30 desks in five rows of six. Wider and shallower, so the back row sits closer to the board.',
+    make: () => makeRows(6, 5),
+  },
+  {
+    key: 'groups4-6',
+    label: 'Table groups of 4 — 6 tables (24)',
+    title: 'Table groups of 4',
+    hint: '24 desks in six tables of four — the standard setup for group work and turn-and-talk.',
+    make: () => makeGroups(6, 4),
+  },
+  {
+    key: 'groups4-8',
+    label: 'Table groups of 4 — 8 tables (32)',
+    title: 'Table groups of 4 — large class',
+    hint: '32 desks in eight tables of four, for a full roster that still needs small groups.',
+    make: () => makeGroups(8, 4),
+  },
+  {
+    key: 'groups6-5',
+    label: 'Table groups of 6 — 5 tables (30)',
+    title: 'Table groups of 6',
+    hint: '30 desks in five tables of six. Fewer, larger teams — good for projects and stations.',
+    make: () => makeGroups(5, 6),
+  },
+  {
+    key: 'pairs-12',
+    label: 'Pairs — 12 pairs (24)',
+    title: 'Pairs',
+    hint: '24 desks in twelve pairs, for reading buddies, think-pair-share and partner work.',
+    make: () => makeGroups(12, 2),
+  },
+  {
+    key: 'u-20',
+    label: 'U-shape — 20 desks',
+    title: 'U-shape',
+    hint: '20 desks in a horseshoe so everyone can see everyone — built for discussion and debate.',
+    make: () => makeUShape(8, 6),
+  },
+  {
+    key: 'u-26',
+    label: 'U-shape — 26 desks',
+    title: 'U-shape — large class',
+    hint: '26 desks in a deeper horseshoe, keeping a discussion layout for a full class.',
+    make: () => makeUShape(10, 8),
+  },
 ];

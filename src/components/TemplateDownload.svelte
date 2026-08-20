@@ -95,12 +95,11 @@
     display: inline-flex;
     flex-direction: column;
     gap: var(--space-2);
-    align-items: flex-end;
+    align-items: flex-start;
   }
   .err {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     gap: var(--space-2);
     padding: var(--space-2) var(--space-3);
     border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
@@ -110,6 +109,5 @@
     font-size: var(--text-xs);
     font-weight: 700;
     max-width: 16rem;
-    text-align: right;
   }
 </style>

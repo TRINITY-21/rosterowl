@@ -1,0 +1,188 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import BlankDownload from '../../components/BlankDownload.svelte';
+import MoreTools from '../../components/MoreTools.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import { BLANKS } from '../../lib/blanks';
+import { toolJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Blank Classroom Printables',
+  path: '/printables/',
+  description:
+    'Free blank classroom printables as clean one-page PDFs: attendance sheets, class checklists, name plates, badges, a jobs poster and bingo cards. No signup, no watermark — or paste your class list and let RosterOwl fill them in.',
+});
+
+// Build-time line drawings of each sheet. Real proportions, no client JS, and
+// they inherit the theme through the same custom properties the site uses.
+const S = { line: 'var(--line-strong)', faint: 'var(--line)', fill: 'var(--surface)' };
+
+function sheet(w: number, h: number, body: string): string {
+  return `<svg viewBox="0 0 ${w} ${h}" role="presentation" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="${w - 1}" height="${h - 1}" rx="3" fill="${S.fill}" stroke="${S.line}"/>${body}</svg>`;
+}
+
+function rows(x: number, y: number, w: number, count: number, gap: number): string {
+  return Array.from(
+    { length: count },
+    (_, i) => `<line x1="${x}" y1="${y + i * gap}" x2="${x + w}" y2="${y + i * gap}" stroke="${S.faint}"/>`
+  ).join('');
+}
+
+function cols(x: number, y: number, h: number, count: number, gap: number): string {
+  return Array.from(
+    { length: count },
+    (_, i) => `<line x1="${x + i * gap}" y1="${y}" x2="${x + i * gap}" y2="${y + h}" stroke="${S.faint}"/>`
+  ).join('');
+}
+
+const PREVIEWS: Record<string, string> = {
+  attendance: sheet(
+    220,
+    170,
+    `<line x1="14" y1="26" x2="90" y2="26" stroke="${S.line}" stroke-width="3"/>` +
+      `<rect x="14" y="40" width="192" height="116" fill="none" stroke="${S.line}"/>` +
+      rows(14, 54, 192, 8, 14) +
+      cols(46, 40, 116, 11, 16)
+  ),
+  checklist: sheet(
+    150,
+    190,
+    `<line x1="14" y1="24" x2="80" y2="24" stroke="${S.line}" stroke-width="3"/>` +
+      `<rect x="14" y="38" width="122" height="138" fill="none" stroke="${S.line}"/>` +
+      rows(14, 52, 122, 9, 14) +
+      cols(62, 38, 138, 5, 18)
+  ),
+  'desk-plates': sheet(
+    220,
+    170,
+    `<rect x="18" y="24" width="184" height="54" rx="3" fill="none" stroke="${S.line}"/>` +
+      `<rect x="18" y="94" width="184" height="54" rx="3" fill="none" stroke="${S.line}"/>` +
+      `<line x1="18" y1="86" x2="202" y2="86" stroke="${S.faint}" stroke-dasharray="5 5"/>`
+  ),
+  badges: sheet(
+    150,
+    190,
+    Array.from({ length: 8 }, (_, i) => {
+      const x = 16 + (i % 2) * 60;
+      const y = 22 + Math.floor(i / 2) * 40;
+      return `<rect x="${x}" y="${y}" width="58" height="32" rx="3" fill="none" stroke="${S.line}"/>`;
+    }).join('')
+  ),
+  jobs: sheet(
+    150,
+    190,
+    `<line x1="40" y1="24" x2="110" y2="24" stroke="${S.line}" stroke-width="3"/>` +
+      Array.from({ length: 10 }, (_, i) => {
+        const x = 16 + (i % 2) * 60;
+        const y = 38 + Math.floor(i / 2) * 30;
+        return `<rect x="${x}" y="${y}" width="58" height="24" rx="2" fill="none" stroke="${S.line}"/><line x1="${x + 8}" y1="${y + 16}" x2="${x + 50}" y2="${y + 16}" stroke="${S.faint}"/>`;
+      }).join('')
+  ),
+  bingo: sheet(
+    150,
+    190,
+    `<line x1="52" y1="24" x2="98" y2="24" stroke="${S.line}" stroke-width="3"/>` +
+      `<rect x="16" y="36" width="118" height="118" fill="none" stroke="${S.line}"/>` +
+      rows(16, 59.6, 118, 4, 23.6) +
+      cols(39.6, 36, 118, 4, 23.6) +
+      `<rect x="63.2" y="83.2" width="23.6" height="23.6" fill="${S.faint}"/>`
+  ),
+};
+---
+
+<Layout
+  title="Free Blank Classroom Printables (PDF) | RosterOwl"
+  description="Blank classroom printables as clean one-page PDFs: attendance sheets, class checklists, desk name plates, Avery-style badges, a jobs poster and bingo cards. Free, no signup, no watermark — or paste your class list and RosterOwl fills them in."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs trail={[{ label: 'Home', href: '/' }, { label: 'Printables' }]} />
+    <div class="page-head">
+      <h1>Blank classroom printables</h1>
+      <p>
+        One-page PDFs with the names left off — print a stack and fill them in by hand. Free, no
+        signup, no watermark. Or <a href="/seating-chart/">paste your class list once</a> and every
+        one of these comes back with the names already on it.
+      </p>
+    </div>
+
+    <div class="blank-gallery">
+      {BLANKS.map((blank) => (
+        <div class="card">
+          <div class="preview" set:html={PREVIEWS[blank.key]} />
+          <div class="body">
+            <h2>{blank.label}</h2>
+            <p>{blank.hint}</p>
+            <div class="actions">
+              <BlankDownload client:visible blankKey={blank.key} />
+              <a class="filled" href={blank.toolHref}>
+                Or fill it with your class list
+              </a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <section class="seating-note">
+      <h2>Looking for a blank seating chart?</h2>
+      <p>
+        Those live in their own gallery, because the layout is the whole point —
+        <a href="/seating-chart/templates/">eight blank seating chart templates</a> covering rows,
+        table groups of 4 and 6, pairs and U-shape.
+      </p>
+    </section>
+
+    <section class="content">
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Are these really free, with no watermark?</summary>
+          <p>
+            Yes. No signup, no account, no logo stamped across your sheet. RosterOwl has no server
+            costs to recover — the PDF is built in your browser when you press the button.
+          </p>
+        </details>
+        <details>
+          <summary>Why would I paste a class list instead?</summary>
+          <p>
+            Because then you never write names by hand again. The same roster fills your attendance
+            sheet, checklist, name tags, jobs poster and bingo cards — and it stays on your device.
+          </p>
+        </details>
+        <details>
+          <summary>Can I print these on A4?</summary>
+          <p>
+            The blanks here are US Letter. Open the matching tool and switch Paper to A4 — every
+            tool offers both, and the blank version is just the tool with no names in it.
+          </p>
+        </details>
+      </section>
+    </section>
+
+    <MoreTools />
+  </main>
+
+  <SiteFooter note="blank printables, no signup" />
+</Layout>
+
+<style>
+  .seating-note {
+    margin-top: var(--space-6);
+    padding: var(--space-5);
+    border: var(--rule);
+    border-radius: var(--radius-l);
+    background: var(--surface-2);
+  }
+
+  .seating-note h2 {
+    font-size: var(--text-lg);
+  }
+
+  .seating-note p {
+    margin-bottom: 0;
+    color: var(--muted);
+  }
+</style>

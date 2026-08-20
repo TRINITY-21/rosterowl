@@ -2,7 +2,7 @@
 import Icon from '../components/Icon.svelte';
 import SiteFooter from '../components/SiteFooter.astro';
 import Layout from '../layouts/Layout.astro';
-import { SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
+import { PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
 
 // The flagship leads the index; the other two groups follow as compact rows.
 const [, ...otherGroups] = TOOL_GROUPS;
@@ -137,7 +137,7 @@ const chartGroups = [
       </a>
       <p class="variants">
         <span>Ready to go:</span>
-        {SEATING_VARIANTS.map((v) => (
+        {[...SEATING_VARIANTS, PRINTABLES].map((v) => (
           <a href={v.href}>{v.label}</a>
         ))}
       </p>

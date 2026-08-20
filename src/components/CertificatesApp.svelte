@@ -5,20 +5,12 @@
   import ClassSwitcher from './ClassSwitcher.svelte';
   import EmptyState from './EmptyState.svelte';
   import PdfPreview from './PdfPreview.svelte';
+  import { AWARD_PRESETS } from '../lib/presets';
   import Icon from './Icon.svelte';
 
   app.load();
 
-  const PRESETS = [
-    'Certificate of Achievement',
-    'Star Reader Award',
-    'Kindness Award',
-    'Perfect Attendance',
-    'Most Improved',
-    'Math Star',
-    'Super Scientist',
-    'Outstanding Effort',
-  ];
+  const PRESETS = AWARD_PRESETS;
 
   let pasteMode = $state<'new' | 'add' | null>(null);
   let award = $state(PRESETS[0]);
