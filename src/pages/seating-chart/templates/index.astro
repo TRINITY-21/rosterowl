@@ -2,6 +2,7 @@
 import Layout from '../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
+import MoreTools from '../../../components/MoreTools.astro';
 import TemplateDownload from '../../../components/TemplateDownload.svelte';
 import { TEMPLATES } from '../../../lib/geometry';
 import { toolJsonLd } from '../../../lib/seo';
@@ -106,6 +107,7 @@ const cards = TEMPLATES.map((t) => {
         class list never leaves your browser.
       </p>
     </section>
+    <MoreTools />
   </main>
 
   <SiteFooter />

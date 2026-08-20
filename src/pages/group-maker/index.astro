@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
+import MoreTools from '../../components/MoreTools.astro';
 import GroupMakerApp from '../../components/GroupMakerApp.svelte';
 import { toolJsonLd, faqJsonLd } from '../../lib/seo';
 
@@ -106,6 +107,7 @@ const faqLd = faqJsonLd([
         </details>
       </section>
     </section>
+    <MoreTools />
   </main>
 
   <SiteFooter />

@@ -528,6 +528,7 @@
       onclick={() => (app.snap = !app.snap)}
     >
       <Icon name="magnet" size={17} />
+      <span class="snap-label">Snap</span>
     </button>
   </div>
 
@@ -682,7 +683,8 @@
     font-variant-numeric: tabular-nums;
     color: var(--muted);
   }
-  .reset-label {
+  .reset-label,
+  .snap-label {
     font-size: var(--text-sm);
   }
   .pill-divider {
@@ -906,7 +908,8 @@
     .canvas-wrap:has(.action-bar) .canvas-pill {
       display: none;
     }
-    .reset-label {
+    .reset-label,
+    .snap-label {
       display: none;
     }
     /* Fingers need the full target; the pill still reads as one control. */

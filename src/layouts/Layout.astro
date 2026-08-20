@@ -337,7 +337,7 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     gap: 0.3rem;
     height: 2.25rem;
     padding: 0 0.7rem;
-    border-radius: var(--radius-s);
+    border-radius: var(--radius-m);
     color: var(--muted);
     font-size: var(--text-sm);
     font-weight: 700;
@@ -527,7 +527,10 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     font-size: var(--text-sm);
   }
 
-  .flagship :global(svg:last-child) {
+  /* The trailing arrow only. Must be a direct child: the chip's own icon is
+     also a :last-child (of .t-icon), and this rule was greying it out on the
+     green chip until the combinator was tightened. */
+  .flagship > :global(svg) {
     flex: none;
     margin-left: auto;
     align-self: center;
@@ -563,7 +566,7 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     height: 2.25rem;
     padding: 0 0.7rem;
     border: var(--rule);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-m);
     background: var(--surface);
     color: var(--ink);
     font-size: var(--text-xs);
@@ -602,8 +605,8 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--touch-target);
-    height: var(--touch-target);
+    width: 2.25rem;
+    height: 2.25rem;
     border: var(--rule);
     border-radius: var(--radius-m);
     background: var(--surface);
@@ -678,6 +681,11 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
   }
 
   @media (max-width: 620px) {
+    .theme-toggle {
+      width: var(--touch-target);
+      height: var(--touch-target);
+    }
+
     .class-chip {
       display: none;
     }
