@@ -87,7 +87,9 @@
   --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
   --motion-fast: 140ms;
   --motion-medium: 220ms;
-  --focus-ring: 3px solid color-mix(in srgb, var(--brand) 74%, transparent);
+  /* Thin, opaque and tight. A thicker or translucent ring reads as a second
+     border rather than as focus, especially on inputs that already have one. */
+  --focus-ring: 2px solid var(--brand);
 
   /* Readable ink for text sitting on the amber accent, both themes. */
   --on-accent: #2a1d05;

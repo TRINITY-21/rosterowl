@@ -208,7 +208,7 @@
       Paste your class list once — every job chart starts from it.
     </EmptyState>
   {:else}
-    <div class="print-grid">
+    <div class="print-grid jobs-grid">
       <div class="print-options">
         {#if jobCount > 0}
           <div class="job-rows" role="group" aria-label="Jobs and who does them">
@@ -360,6 +360,13 @@
 <Toasts />
 
 <style>
+  /* This panel holds a two-field-per-row editor, not a stack of single
+     controls, so it runs wider than the standard options column — at 19rem
+     "Materials Manager" and "Class Librarian" were both cut off. */
+  .jobs-grid {
+    grid-template-columns: minmax(20rem, 25rem) minmax(0, 1fr);
+  }
+
   .job-rows {
     display: flex;
     flex-direction: column;
@@ -368,7 +375,7 @@
 
   .job-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto;
     gap: var(--space-2);
     align-items: center;
   }
@@ -398,6 +405,12 @@
   }
 
   @media (max-width: 640px) {
+    /* This rule outranks the global .print-grid collapse, so it has to collapse
+       itself — a 20rem minimum would push a phone into horizontal scrolling. */
+    .jobs-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     /* Match the global 16px floor: anything smaller makes iOS Safari zoom in
        when the field is focused. */
     .job-row input,

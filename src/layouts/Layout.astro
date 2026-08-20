@@ -639,6 +639,13 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     }
   }
 
+  /* A closed <details> is laid out under containment rather than removed, and a
+     position:fixed panel inside it still contributed to the document's scroll
+     width — a phantom 44px of horizontal scroll on every tool page. */
+  .tools-menu:not([open]) .tools-panel {
+    display: none;
+  }
+
   @media (max-width: 760px) {
     /* The panel becomes a sheet anchored under the header, not a popover. */
     .tools-panel {

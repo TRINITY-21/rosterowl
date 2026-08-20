@@ -94,7 +94,10 @@ button {
   cursor: pointer;
 }
 
-input,
+/* Text-entry fields only. Checkboxes, radios and sliders are not text boxes —
+   handing them a 2.75rem min-height, padding and a border blew every one of
+   them up into an oversized system-blue block. */
+input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']),
 select,
 textarea {
   font-family: var(--font-body);
@@ -106,6 +109,27 @@ textarea {
   min-height: var(--control-h);
   padding: 0.55rem 0.75rem;
   transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+input:not([type='checkbox'], [type='radio'], [type='range'], [type='file']):hover,
+select:hover,
+textarea:hover {
+  border-color: var(--brand);
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+input[type='range'] {
+  accent-color: var(--brand);
+  cursor: pointer;
 }
 
 textarea {
@@ -126,19 +150,14 @@ summary:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
   outline: var(--focus-ring);
-  outline-offset: 3px;
-  /* Paper-coloured halo fills the offset gap, so the green ring stays legible
-     even when the focused control sits on a surface tinted the same green
-     (a .btn.primary inside [data-sample-banner], for instance). */
-  box-shadow: 0 0 0 3px var(--paper);
+  outline-offset: 2px;
 }
 
 /* Containers that clip their own corners would clip an outset ring with it.
    Inside those, the ring is drawn within the element instead of around it. */
 #main-content .faq summary:focus-visible,
 .print-preview :focus-visible {
-  outline-offset: -3px;
-  box-shadow: none;
+  outline-offset: -2px;
 }
 
 ::selection {
@@ -337,31 +356,36 @@ a:focus-visible,
   flex-wrap: wrap;
 }
 
+/* One screen-height workspace, the same idiom SeatingApp's .frame uses: the
+   options rail scrolls inside itself and the preview holds its place, so
+   changing a setting and watching the PDF redraw never means scrolling. */
 .print-grid {
   display: grid;
   grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
   gap: var(--space-4);
   min-width: 0;
+  height: min(calc(100dvh - 7rem), 58rem);
+  min-height: 32rem;
 }
 
 .print-options {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: var(--space-4);
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-l);
   padding: var(--space-4);
-  align-self: start;
-  position: sticky;
-  top: 5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .print-opt {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
   min-width: 0;
   font-size: var(--text-sm);
   font-weight: 700;
@@ -371,9 +395,16 @@ a:focus-visible,
 .print-check {
   display: flex;
   align-items: flex-start;
-  gap: 0.4rem;
+  gap: 0.55rem;
   min-width: 0;
   font-size: var(--text-sm);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+/* Nudged onto the optical centre of the label's first line. */
+.print-check input[type='checkbox'] {
+  margin-top: 0.1rem;
 }
 
 .print-note {
@@ -394,14 +425,27 @@ a:focus-visible,
   font-weight: 700;
 }
 
-/* The download button is the panel's primary action — full width, own breathing room. */
+/* The download button is the panel's primary action. These panels run taller
+   than the viewport, so it stays pinned to the bottom of the panel rather than
+   sitting below the fold under six option fields. The surface-coloured ring
+   masks the options scrolling behind it. */
 .print-options .btn.primary {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   margin-top: var(--space-1);
+  box-shadow: 0 0 0 0.6rem var(--surface);
 }
 
-/* Controls follow their panel, never their longest option label. */
+.print-options .btn.primary:hover {
+  box-shadow: 0 0 0 0.6rem var(--surface), var(--shadow-1);
+}
+
+/* Controls follow their panel, never their longest option label. Tick boxes are
+   excluded: this rule outranks the type selector below, so it was stretching
+   every checkbox to the full panel width and shoving its label off the page. */
 .print-options select,
-.print-options input,
+.print-options input:not([type='checkbox'], [type='radio']),
 .print-options textarea {
   width: 100%;
   min-width: 0;
@@ -772,8 +816,19 @@ a:focus-visible,
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Stacked on a phone: the page scrolls, so nothing scrolls inside itself. */
+  .print-grid {
+    height: auto;
+    min-height: 0;
+  }
+
   .print-options {
+    overflow: visible;
+  }
+
+  .print-options .btn.primary {
     position: static;
+    box-shadow: none;
   }
 
   .print-preview,
