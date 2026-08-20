@@ -30,7 +30,7 @@
 
 <div class="tool-empty" class:compact>
   {#if icon}
-    <span class="empty-icon" aria-hidden="true"><Icon name={icon} size={compact ? 20 : 24} /></span>
+    <span class="empty-icon" aria-hidden="true"><Icon name={icon} size={compact ? 22 : 28} stroke={1.7} /></span>
   {/if}
   {#if level === 3}
     <h3>{title}</h3>
@@ -46,20 +46,16 @@
 </div>
 
 <style>
+  /* The glyph on its own. A tinted circle behind it added decoration without
+     adding meaning, and echoed the icon chips the rest of the site dropped. */
   .empty-icon {
-    display: inline-grid;
-    place-items: center;
-    width: 3rem;
-    height: 3rem;
+    display: block;
     margin-bottom: var(--space-3);
-    border-radius: 50%;
-    background: var(--brand-soft);
-    color: var(--brand-strong);
+    color: var(--brand);
+    line-height: 0;
   }
 
   .compact .empty-icon {
-    width: 2.4rem;
-    height: 2.4rem;
     margin-bottom: var(--space-2);
   }
 

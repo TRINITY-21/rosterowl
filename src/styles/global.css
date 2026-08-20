@@ -164,6 +164,46 @@ a:focus-visible,
   background: var(--accent-soft);
 }
 
+/* --- scrollbars ------------------------------------------------------------
+   The default chrome is a grey slab that reads as belonging to the browser, not
+   to the page. scrollbar-color inherits, so the root covers every scroll area;
+   scrollbar-width does not inherit, so it has to be set on each of them. */
+html {
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+*,
+*::before,
+*::after {
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  /* Painted inside a transparent border so the thumb reads as inset. */
+  background: var(--line-strong);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -327,8 +367,9 @@ a:focus-visible,
 
 .tool-empty .copy,
 .tool-empty p {
+  max-width: 34rem;
+  margin: var(--space-3) auto var(--space-4);
   color: var(--muted);
-  margin: var(--space-3) 0 var(--space-4);
 }
 
 .tool-empty.compact {

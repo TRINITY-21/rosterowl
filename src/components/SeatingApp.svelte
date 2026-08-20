@@ -222,64 +222,73 @@
 
   {#if app.mode === 'arrange'}
     <div class="subbar">
-      <input
-        class="room-name"
-        aria-label="Room name"
-        value={app.activeRoom?.name ?? ''}
-        onchange={(e) => app.renameRoom(e.currentTarget.value)}
-      />
-      <select aria-label="Start from a template" onchange={onTemplate}>
-        <option value="">Start over from template…</option>
-        {#each TEMPLATES as t}
-          <option value={t.key}>{t.label}</option>
-        {/each}
-      </select>
-      <span class="divider"></span>
-      <span class="lbl">Add:</span>
-      <button class="btn small" onclick={() => app.addCluster(1)}>desk</button>
-      <button class="btn small" onclick={() => app.addCluster(2)}>pair</button>
-      <button class="btn small" onclick={() => app.addCluster(4)}>table of 4</button>
-      <button class="btn small" onclick={() => app.addCluster(6)}>table of 6</button>
-      <span class="divider"></span>
-      <span class="lbl">Zone brush:</span>
-      <button
-        class="btn small brush"
-        class:on={app.zoneBrush === 'near-teacher'}
-        aria-pressed={app.zoneBrush === 'near-teacher'}
-        onclick={() => (app.zoneBrush = app.zoneBrush === 'near-teacher' ? null : 'near-teacher')}
-      >
-        <span class="brush-dot near-teacher" aria-hidden="true"></span>
-        Near teacher
-      </button>
-      <button
-        class="btn small brush"
-        class:on={app.zoneBrush === 'away-from-door'}
-        aria-pressed={app.zoneBrush === 'away-from-door'}
-        onclick={() =>
-          (app.zoneBrush = app.zoneBrush === 'away-from-door' ? null : 'away-from-door')}
-      >
-        <span class="brush-dot away-from-door" aria-hidden="true"></span>
-        Away from door
-      </button>
-      <span class="divider"></span>
-      <button
-        class="btn small"
-        onclick={() => {
-          const r = app.activeRoom;
-          if (!r) return;
-          r.teacherDesk = r.teacherDesk ? null : { x: 3.5, y: 0.2 };
-          app.scheduleSave();
-        }}>{app.activeRoom?.teacherDesk ? 'Remove teacher desk' : 'Add teacher desk'}</button
-      >
-      <button
-        class="btn small"
-        onclick={() => {
-          const r = app.activeRoom;
-          if (!r) return;
-          r.door = r.door ? null : { x: 0.2, y: 0.2 };
-          app.scheduleSave();
-        }}>{app.activeRoom?.door ? 'Remove door' : 'Add door'}</button
-      >
+      <div class="sub-group" role="group" aria-label="Room">
+        <input
+          class="room-name"
+          aria-label="Room name"
+          value={app.activeRoom?.name ?? ''}
+          onchange={(e) => app.renameRoom(e.currentTarget.value)}
+        />
+        <select aria-label="Start from a template" onchange={onTemplate}>
+          <option value="">Start over from template…</option>
+          {#each TEMPLATES as t}
+            <option value={t.key}>{t.label}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="sub-group" role="group" aria-label="Add desks">
+        <span class="lbl">Add</span>
+        <button class="btn small" onclick={() => app.addCluster(1)}>desk</button>
+        <button class="btn small" onclick={() => app.addCluster(2)}>pair</button>
+        <button class="btn small" onclick={() => app.addCluster(4)}>table of 4</button>
+        <button class="btn small" onclick={() => app.addCluster(6)}>table of 6</button>
+      </div>
+
+      <div class="sub-group" role="group" aria-label="Zone brush">
+        <span class="lbl">Zones</span>
+        <button
+          class="btn small brush"
+          class:on={app.zoneBrush === 'near-teacher'}
+          aria-pressed={app.zoneBrush === 'near-teacher'}
+          onclick={() => (app.zoneBrush = app.zoneBrush === 'near-teacher' ? null : 'near-teacher')}
+        >
+          <span class="brush-dot near-teacher" aria-hidden="true"></span>
+          Near teacher
+        </button>
+        <button
+          class="btn small brush"
+          class:on={app.zoneBrush === 'away-from-door'}
+          aria-pressed={app.zoneBrush === 'away-from-door'}
+          onclick={() =>
+            (app.zoneBrush = app.zoneBrush === 'away-from-door' ? null : 'away-from-door')}
+        >
+          <span class="brush-dot away-from-door" aria-hidden="true"></span>
+          Away from door
+        </button>
+      </div>
+
+      <div class="sub-group" role="group" aria-label="Room fixtures">
+        <span class="lbl">Fixtures</span>
+        <button
+          class="btn small"
+          onclick={() => {
+            const r = app.activeRoom;
+            if (!r) return;
+            r.teacherDesk = r.teacherDesk ? null : { x: 3.5, y: 0.2 };
+            app.scheduleSave();
+          }}>{app.activeRoom?.teacherDesk ? 'Remove teacher desk' : 'Add teacher desk'}</button
+        >
+        <button
+          class="btn small"
+          onclick={() => {
+            const r = app.activeRoom;
+            if (!r) return;
+            r.door = r.door ? null : { x: 0.2, y: 0.2 };
+            app.scheduleSave();
+          }}>{app.activeRoom?.door ? 'Remove door' : 'Add door'}</button
+        >
+      </div>
     </div>
   {/if}
 
@@ -292,8 +301,11 @@
     class="roster-toggle"
     type="button"
     aria-expanded={rosterOpen}
+    aria-controls="roster-panel"
+    title={rosterOpen ? 'Hide the roster and use the full canvas' : 'Show the roster'}
     onclick={() => (rosterOpen = !rosterOpen)}
   >
+    <Icon name={rosterOpen ? 'minus' : 'plus'} size={15} />
     {rosterOpen ? 'Hide roster' : `Show roster · ${cls.students.length} students`}
   </button>
   <div class="workspace" class:roster-collapsed={!rosterOpen}>
@@ -417,16 +429,25 @@
     color: var(--muted);
     font-weight: 700;
   }
+  /* Labelled clusters that wrap as whole units. Bare 1px dividers used to wrap
+     too, leaving a stray rule orphaned at the head of the second line. */
   .subbar {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: var(--space-2) var(--space-5);
     flex-wrap: wrap;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-m);
     padding: var(--space-2) var(--space-3);
     font-size: var(--text-sm);
+  }
+
+  .sub-group {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
   }
   .room-name {
     width: 9rem;
@@ -436,12 +457,7 @@
   .lbl {
     color: var(--muted);
     font-weight: 700;
-  }
-  .divider {
-    width: 1px;
-    align-self: stretch;
-    background: var(--line);
-    margin: 0 0.3rem;
+    white-space: nowrap;
   }
   .brush.on {
     background: var(--accent-soft);
@@ -465,7 +481,29 @@
     display: flex;
     gap: 0.8rem;
   }
+  /* Collapsing the roster hands the whole width to the canvas — useful at every
+     size, not just on a phone, when you are arranging a wide room. */
   .roster-toggle {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: var(--control-h-sm);
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--surface);
+    color: var(--muted);
+    font-weight: 700;
+    transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease;
+  }
+
+  .roster-toggle:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+
+  .workspace.roster-collapsed :global(.panel) {
     display: none;
   }
   @media (max-width: 760px) {
@@ -505,22 +543,12 @@
       padding: var(--space-2);
       scrollbar-width: thin;
     }
-    .divider {
-      min-height: 2rem;
-    }
     .roster-toggle {
-      display: flex;
-      align-items: center;
+      align-self: stretch;
       justify-content: center;
       min-height: var(--touch-target);
-      border: 1px solid var(--line);
       border-radius: var(--radius-m);
-      background: var(--surface);
       color: var(--ink);
-      font-weight: 700;
-    }
-    .workspace.roster-collapsed :global(.panel) {
-      display: none;
     }
   }
 </style>

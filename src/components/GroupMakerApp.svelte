@@ -130,7 +130,11 @@
   {/if}
 
   {#if !cls || cls.students.length === 0}
-    <EmptyState title="No class yet" actionLabel="Paste your class list" onaction={() => (pasteMode = 'new')}>
+    <EmptyState
+      title={cls ? 'No students on this roster' : 'No class yet'}
+      actionLabel={cls ? 'Add students' : 'Paste your class list'}
+      onaction={() => (pasteMode = cls ? 'add' : 'new')}
+    >
       Random groups need names first. Paste your class list once — the group maker, the seating
       chart, and every other tool here reuse the same roster.
     </EmptyState>

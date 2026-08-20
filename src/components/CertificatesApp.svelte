@@ -160,7 +160,11 @@
   {/if}
 
   {#if !cls || cls.students.length === 0}
-    <EmptyState title="No class yet" actionLabel="Paste your class list" onaction={() => (pasteMode = 'new')}>
+    <EmptyState
+      title={cls ? 'No students on this roster' : 'No class yet'}
+      actionLabel={cls ? 'Add students' : 'Paste your class list'}
+      onaction={() => (pasteMode = cls ? 'add' : 'new')}
+    >
       Certificates print one page per student, so RosterOwl needs the names first. Paste your class
       list once — every tool on the site reuses it.
     </EmptyState>

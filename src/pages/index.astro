@@ -441,17 +441,20 @@ const chartGroups = [
   }
 
   /* desk plates */
+  /* Plates are kept short enough that the two above the chart sheet's edge sit
+     fully clear of it — a plate sliced through the middle of its name reads as
+     a bug, not as paper under paper. */
   .tags {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 5%;
+    gap: 3.5%;
   }
 
   .plate {
     display: grid;
     place-items: center;
-    padding: 5% 0;
+    padding: 3.5% 0;
     border: 1px dashed #c4bba7;
     border-radius: 2px;
     font-family: var(--font-display);

@@ -146,7 +146,11 @@
   {/if}
 
   {#if !cls || cls.students.length === 0}
-    <EmptyState title="No class yet" actionLabel="Paste your class list" onaction={() => (pasteMode = 'new')}>
+    <EmptyState
+      title={cls ? 'No students on this roster' : 'No class yet'}
+      actionLabel={cls ? 'Add students' : 'Paste your class list'}
+      onaction={() => (pasteMode = cls ? 'add' : 'new')}
+    >
       Tags are printed straight from your roster, so RosterOwl needs the names first. Paste your
       class list once — a tag for everyone, no name typed twice, and every other tool reuses it.
     </EmptyState>

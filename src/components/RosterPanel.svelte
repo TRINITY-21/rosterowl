@@ -156,7 +156,7 @@
   }
 </script>
 
-<aside class="panel" data-tray aria-label="Class roster">
+<aside class="panel" id="roster-panel" data-tray aria-label="Class roster">
   <header>
     {#if cls}
       <input

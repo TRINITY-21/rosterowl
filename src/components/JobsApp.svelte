@@ -204,7 +204,11 @@
   {/if}
 
   {#if !cls || cls.students.length === 0}
-    <EmptyState title="No class yet" actionLabel="Paste your class list" onaction={() => (pasteMode = 'new')}>
+    <EmptyState
+      title={cls ? 'No students on this roster' : 'No class yet'}
+      actionLabel={cls ? 'Add students' : 'Paste your class list'}
+      onaction={() => (pasteMode = cls ? 'add' : 'new')}
+    >
       Paste your class list once — every job chart starts from it.
     </EmptyState>
   {:else}
