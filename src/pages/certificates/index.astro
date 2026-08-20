@@ -1,0 +1,110 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import CertificatesApp from '../../components/CertificatesApp.svelte';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Award Certificates',
+  path: '/certificates/',
+  description:
+    'One click: an award certificate for every student on your class list, as a single printable PDF. No watermark, no signup — names never leave your browser.',
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim.
+const faqLd = faqJsonLd([
+  {
+    q: `Can I give different awards to different students?`,
+    a: `Run it more than once — pick the award, download, pick the next. Per-student award assignment on one screen is on the roadmap.`,
+  },
+  {
+    q: `Can I write my own award title?`,
+    a: `Yes — choose "Custom…" and type anything: Spelling Bee Champion, Recess Peacemaker, Bravest Show-and-Tell. Your message line is fully yours too.`,
+  },
+  {
+    q: `End-of-year certificates for three classes?`,
+    a: `Switch classes in the top-left dropdown and download again — each class's roster is already here if you've used any RosterOwl tool.`,
+  },
+]);
+---
+
+<Layout
+  title="Whole-Class Award Certificate Generator | RosterOwl"
+  description="A certificate for every student in one click: pick an award, write your message, and download one PDF with a page per student — full names, no watermark, no re-typing. Free, no signup — names never leave your browser."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Award certificates for the whole class</h1>
+      <p>
+        Pick an award, write one message, download one PDF — a certificate for every student on
+        your list, no name typed twice. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <CertificatesApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why teachers use it</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>⚡ The whole class in one click</h3>
+          <p>
+            The usual way is a template site: type a name, download, repeat 28 times — or pay to
+            remove the watermark. Here your roster does the typing: 28 students, 28 pages, one
+            PDF, zero watermarks.
+          </p>
+        </div>
+        <div>
+          <h3>Full names, spelled right</h3>
+          <p>
+            Certificates use full names exactly as they appear in your class list — Zoë stays Zoë,
+            O'Brien keeps its apostrophe — in a warm, readable typeface.
+          </p>
+        </div>
+        <div>
+          <h3>Made to be printed</h3>
+          <p>
+            Landscape letter or A4, a clean double border, signature and date lines — and an
+            ink-saver mode when the color printer is "temporarily" out of order again.
+          </p>
+        </div>
+        <div>
+          <h3>Private by architecture</h3>
+          <p>Runs entirely in your browser. No accounts, no uploads, nothing stored anywhere but your device.</p>
+        </div>
+      </div>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Can I give different awards to different students?</summary>
+          <p>
+            Run it more than once — pick the award, download, pick the next. Per-student award
+            assignment on one screen is on the roadmap.
+          </p>
+        </details>
+        <details>
+          <summary>Can I write my own award title?</summary>
+          <p>
+            Yes — choose "Custom…" and type anything: Spelling Bee Champion, Recess Peacemaker,
+            Bravest Show-and-Tell. Your message line is fully yours too.
+          </p>
+        </details>
+        <details>
+          <summary>End-of-year certificates for three classes?</summary>
+          <p>
+            Switch classes in the top-left dropdown and download again — each class's roster is
+            already here if you've used any RosterOwl tool.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+

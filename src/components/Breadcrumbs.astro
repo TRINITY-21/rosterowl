@@ -1,0 +1,90 @@
+---
+// Orientation for the seating-chart variant pages, which otherwise give no clue
+// that they sit under the main tool. Emits BreadcrumbList structured data too.
+interface Crumb {
+  label: string;
+  href?: string;
+}
+interface Props {
+  trail: Crumb[];
+}
+const { trail } = Astro.props;
+
+const site = 'https://rosterowl.com';
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: trail.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.label,
+    ...(c.href ? { item: `${site}${c.href}` } : {}),
+  })),
+});
+---
+
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol>
+    {
+      trail.map((crumb, i) => (
+        <li>
+          {crumb.href ? (
+            <a href={crumb.href}>{crumb.label}</a>
+          ) : (
+            <span aria-current="page">{crumb.label}</span>
+          )}
+          {i < trail.length - 1 && (
+            <span class="sep" aria-hidden="true">
+              /
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+<script is:inline type="application/ld+json" set:html={jsonLd} />
+
+<style>
+  .crumbs {
+    padding-top: var(--space-4);
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .crumbs li {
+    display: flex;
+    align-items: center;
+  }
+
+  .crumbs a {
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.2rem 0.35rem;
+    border-radius: var(--radius-xs);
+  }
+
+  .crumbs a:hover {
+    color: var(--brand);
+    background: var(--brand-soft);
+  }
+
+  .crumbs [aria-current='page'] {
+    color: var(--ink);
+    padding: 0.2rem 0.35rem;
+  }
+
+  .sep {
+    color: var(--line-strong);
+  }
+</style>

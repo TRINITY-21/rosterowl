@@ -1,0 +1,88 @@
+/* RosterOwl design tokens.
+   Light = warm paper & chalkboard green. Dark = literal chalkboard.
+   Colors use light-dark() so a single token table serves both themes.
+   color-scheme on <html> (see global.css) chooses which side is used. */
+
+:root {
+  --paper: light-dark(#faf7f0, #141d1a);
+  --surface: light-dark(#ffffff, #1c2723);
+  --surface-2: light-dark(#f3efe6, #22302b);
+  --ink: light-dark(#243230, #ede9dc);
+  --muted: light-dark(#5c6b66, #9aaba2);
+  --brand: light-dark(#2e6b4f, #5fa783);
+  --brand-strong: light-dark(#245741, #79bd9a);
+  --brand-soft: light-dark(#e3ede7, #21362d);
+  --on-brand: light-dark(#fdfcf8, #141d1a);
+  --accent: #e8a03c;
+  --accent-soft: light-dark(#f9edd8, #3a2f1a);
+  --line: light-dark(#ddd6c7, #2c3a34);
+  --line-strong: light-dark(#c4bba7, #3d4f47);
+
+  --ok: light-dark(#2f7d46, #6fbf87);
+  --warn: light-dark(#8a5f0f, #e0b45c);
+  --warn-soft: light-dark(#f7ecd4, #33290f);
+  --danger: light-dark(#a03f27, #e08a75);
+  --danger-soft: light-dark(#f6e3dd, #3a201a);
+  --info: light-dark(#386f8f, #83bdd9);
+  --info-soft: light-dark(#e3eef4, #17303a);
+
+  --g-blue: #5b8dc9;
+  --g-coral: #d97b66;
+  --g-green: #6fa46f;
+  --g-violet: #8e7cc3;
+  --g-gold: #c9a227;
+  --g-teal: #4e9b94;
+
+  --shadow-1:
+    0 1px 2px light-dark(rgb(36 50 48 / 0.06), rgb(0 0 0 / 0.3)),
+    0 2px 8px light-dark(rgb(36 50 48 / 0.06), rgb(0 0 0 / 0.3));
+  --shadow-2:
+    0 2px 6px light-dark(rgb(36 50 48 / 0.08), rgb(0 0 0 / 0.35)),
+    0 8px 24px light-dark(rgb(36 50 48 / 0.12), rgb(0 0 0 / 0.45));
+  --scrim: light-dark(rgb(36 50 48 / 0.44), rgb(0 0 0 / 0.6));
+
+  --radius-xs: 5px;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+  --radius-xl: 26px;
+  --radius-pill: 999px;
+
+  --font-display: 'Baloo 2', 'Avenir Next Rounded', 'Trebuchet MS', sans-serif;
+  --font-body: 'Atkinson Hyperlegible', 'Verdana', 'Segoe UI', sans-serif;
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.35rem;
+  --text-2xl: clamp(1.7rem, 3vw, 2.25rem);
+  --text-display: clamp(2.65rem, 7vw, 4.8rem);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+
+  --control-h: 2.75rem;
+  --control-h-sm: 2.25rem;
+  --touch-target: 2.75rem;
+  --content-narrow: 46rem;
+  --content-wide: 80rem;
+  --page-gutter: clamp(1rem, 3vw, 2rem);
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --motion-fast: 140ms;
+  --motion-medium: 220ms;
+  --focus-ring: 3px solid color-mix(in srgb, var(--brand) 74%, transparent);
+
+  /* Readable ink for text sitting on the amber accent, both themes. */
+  --on-accent: #2a1d05;
+  --desk-fill: light-dark(#ffffff, #223029);
+  --desk-line: light-dark(#c4bba7, #3d4f47);
+  --desk-empty-line: light-dark(#d8d0bf, #31423a);
+  --canvas-bg: light-dark(#f5f1e8, #17211d);
+  --canvas-dot: light-dark(#e3dccb, #22302a);
+}

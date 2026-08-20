@@ -1,0 +1,818 @@
+@import './tokens.css';
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  src:
+    url('/fonts/AtkinsonHyperlegible-Regular.woff2') format('woff2'),
+    url('/fonts/AtkinsonHyperlegible-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  src:
+    url('/fonts/AtkinsonHyperlegible-Bold.woff2') format('woff2'),
+    url('/fonts/AtkinsonHyperlegible-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Baloo 2';
+  src:
+    url('/fonts/Baloo2-Variable.woff2') format('woff2'),
+    url('/fonts/Baloo2-Variable.ttf') format('truetype');
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+  scroll-behavior: smooth;
+  /* Clear the sticky header, or every #anchor and the skip link land under it. */
+  scroll-padding-top: calc(4rem + env(safe-area-inset-top) + var(--space-3));
+  scrollbar-gutter: stable;
+}
+
+/* Light paper is the default look everywhere; the dark chalkboard theme is an
+   explicit opt-in via the header toggle (html[data-theme='dark']). */
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* Set while a modal or confirm dialog is open, so the page behind cannot scroll. */
+body[data-modal-open] {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  line-height: 1.15;
+  text-wrap: balance;
+  margin: 0;
+  font-weight: 700;
+}
+
+p {
+  margin: var(--space-3) 0;
+}
+
+a {
+  color: var(--brand);
+  text-underline-offset: 0.16em;
+  text-decoration-thickness: 0.08em;
+}
+
+button {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  min-height: var(--control-h);
+  padding: 0.55rem 0.75rem;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 1000;
+  top: var(--space-3);
+  left: var(--space-3);
+  transform: translateY(-180%);
+  border-radius: var(--radius-m);
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--space-2) var(--space-4);
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--shadow-2);
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* --- shared button vocabulary (used by app + site) --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: var(--control-h);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius-m);
+  padding: 0.55rem 0.95rem;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    transform 80ms ease;
+}
+
+.btn svg {
+  flex: none;
+}
+.btn:hover {
+  background: var(--surface-2);
+  border-color: var(--brand);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.btn.primary:hover {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+}
+.btn.quiet {
+  border-color: transparent;
+  background: transparent;
+}
+.btn.quiet:hover {
+  background: var(--surface-2);
+}
+.btn.small {
+  min-height: var(--control-h-sm);
+  padding: 0.4rem 0.7rem;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-s);
+}
+.btn.large {
+  min-height: 3.1rem;
+  padding: 0.7rem 1.4rem;
+  font-size: var(--text-base);
+  border-radius: var(--radius-m);
+}
+.btn:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+}
+
+.btn.danger:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+.btn.danger-fill {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: light-dark(#fdfcf8, #141d1a);
+}
+
+.btn.danger-fill:hover {
+  background: color-mix(in srgb, var(--danger) 88%, black);
+  border-color: color-mix(in srgb, var(--danger) 88%, black);
+}
+
+[data-sample-banner] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--brand) 42%, var(--line));
+  border-radius: var(--radius-m);
+  background: var(--brand-soft);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.tool-empty {
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-l);
+  padding: var(--space-7) var(--space-4);
+}
+
+.tool-empty h2 {
+  font-size: var(--text-xl);
+}
+
+.tool-empty .copy,
+.tool-empty p {
+  color: var(--muted);
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.tool-empty.compact {
+  padding: var(--space-5) var(--space-4);
+}
+
+.tool-frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.tool-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.tool-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.print-grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.print-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  padding: var(--space-4);
+  align-self: start;
+  position: sticky;
+  top: 5rem;
+}
+
+.print-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.print-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.print-note {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  margin: 0;
+}
+
+.print-note.warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line));
+  border-radius: var(--radius-s);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-weight: 700;
+}
+
+/* The download button is the panel's primary action — full width, own breathing room. */
+.print-options .btn.primary {
+  margin-top: var(--space-1);
+}
+
+/* Controls follow their panel, never their longest option label. */
+.print-options select,
+.print-options input,
+.print-options textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.print-preview {
+  min-width: 0;
+  min-height: 28rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+  display: grid;
+}
+
+.print-preview object {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 28rem;
+  border: none;
+}
+
+.print-msg {
+  place-self: center;
+  color: var(--muted);
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.print-msg.err {
+  color: var(--danger);
+}
+
+.print-msg .btn {
+  margin-top: var(--space-3);
+}
+
+/* --- skeleton shown while a PDF preview is being built --------------------
+   A page-shaped placeholder beats the words "Building preview…" — the teacher
+   sees the shape of what is coming. */
+.print-skeleton {
+  place-self: stretch;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.print-skeleton .sheet {
+  width: min(100%, 21rem);
+  aspect-ratio: 11 / 8.5;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow-1);
+}
+
+.print-skeleton .sheet[data-portrait] {
+  aspect-ratio: 8.5 / 11;
+  width: min(100%, 16rem);
+}
+
+.skeleton-line {
+  height: 0.6rem;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    color-mix(in srgb, var(--surface-2) 55%, var(--line)) 50%,
+    var(--surface-2) 100%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-sweep 1.4s var(--ease-standard) infinite;
+}
+
+.skeleton-line.title {
+  height: 1rem;
+  width: 55%;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-line.short {
+  width: 68%;
+}
+
+.skeleton-line.grid {
+  flex: 1;
+  height: auto;
+  min-height: 1.2rem;
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* --- icon-only button ------------------------------------------------------ */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
+}
+
+.icon-btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.icon-btn.danger:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* Text button that reads as a link inside body copy. */
+.linkish {
+  border: none;
+  background: none;
+  padding: 0;
+  min-height: 0;
+  color: var(--brand);
+  font-weight: 700;
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+  cursor: pointer;
+}
+
+.linkish:hover {
+  color: var(--brand-strong);
+}
+
+/* --- segmented control (mode switches) ------------------------------------ */
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+}
+
+.segmented button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  padding: 0.4rem 0.9rem;
+  min-height: var(--control-h-sm);
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
+}
+
+.segmented button:hover {
+  color: var(--ink);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+/* SiteFooter.astro carries its own styles; pages only control the gap above it. */
+
+/* Shared editorial treatment for every tool landing page. */
+.tool-page {
+  width: min(100%, var(--content-wide));
+  margin: 0 auto;
+  padding: var(--space-4) var(--page-gutter) var(--space-7);
+}
+
+#main-content .page-head {
+  max-width: var(--content-narrow);
+  margin-bottom: var(--space-5);
+  padding-top: var(--space-4);
+}
+
+#main-content .page-head h1 {
+  font-size: var(--text-2xl);
+  letter-spacing: -0.015em;
+}
+
+#main-content .page-head p {
+  max-width: 46rem;
+  color: var(--muted);
+  font-size: var(--text-lg);
+}
+
+#main-content .feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+
+#main-content .feature-grid > div {
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+#main-content .feature-grid > div:hover {
+  border-color: color-mix(in srgb, var(--brand) 34%, var(--line));
+  box-shadow: var(--shadow-1);
+}
+
+#main-content .feature-grid h3 {
+  color: var(--ink);
+  font-size: var(--text-lg);
+}
+
+#main-content .how,
+#main-content .faq {
+  margin-top: var(--space-7);
+}
+
+#main-content .how h2,
+#main-content .faq h2,
+#main-content .content h2 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-3);
+}
+
+#main-content .how ol {
+  padding-left: 1.2rem;
+  display: grid;
+  gap: var(--space-3);
+  color: var(--muted);
+}
+
+#main-content .how strong {
+  color: var(--ink);
+}
+
+#main-content .content {
+  max-width: var(--content-narrow);
+  margin: var(--space-8) auto 0;
+}
+
+#main-content .feature-grid p,
+#main-content .faq p,
+#main-content .content p {
+  color: var(--muted);
+}
+
+#main-content .faq details {
+  overflow: hidden;
+  margin: 0 0 var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  transition: border-color var(--motion-fast) ease;
+}
+
+#main-content .faq details[open],
+#main-content .faq details:hover {
+  border-color: color-mix(in srgb, var(--brand) 34%, var(--line));
+}
+
+#main-content .faq summary {
+  min-height: var(--control-h);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+#main-content .faq summary::-webkit-details-marker {
+  display: none;
+}
+
+#main-content .faq summary::after {
+  content: '';
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+#main-content .faq details[open] summary::after {
+  transform: rotate(225deg);
+}
+
+#main-content .faq details p {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+#main-content .site-foot {
+  margin-top: var(--space-8);
+}
+
+@media (hover: hover) {
+  .btn:not(:disabled):hover {
+    box-shadow: var(--shadow-1);
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 0.975rem;
+  }
+
+  .btn,
+  button,
+  summary,
+  .segmented button {
+    min-height: var(--touch-target);
+  }
+
+  .icon-btn {
+    width: var(--touch-target);
+    height: var(--touch-target);
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+
+  [data-sample-banner] {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  #main-content .page-head {
+    padding-top: var(--space-4);
+  }
+
+  #main-content .content {
+    margin-top: var(--space-7);
+  }
+
+  .print-grid {
+    /* minmax(0,1fr), not 1fr: a bare 1fr floors at min-content, so a long
+       <option> string would push the page wider than the viewport. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .print-options {
+    position: static;
+  }
+
+  .print-preview,
+  .print-preview object {
+    min-height: 20rem;
+  }
+}
+
+/* --- browser print path ----------------------------------------------------
+   Every tool's real output is its PDF button, but a teacher who reaches for
+   Cmd/Ctrl+P should still get something honest rather than the sticky header,
+   the nav, and a clipped fragment of a scrollable canvas. */
+@media print {
+  .site-shell,
+  .site-foot,
+  .skip-link,
+  .toasts,
+  .canvas-pill,
+  .action-bar,
+  [data-sample-banner],
+  .print-options {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  #main-content .faq,
+  #main-content .how,
+  #main-content .feature-grid {
+    break-inside: avoid;
+  }
+
+  .print-preview {
+    border: none;
+    min-height: 0;
+  }
+
+  /* Point the reader at the real export instead of printing a partial view. */
+  .print-grid::before,
+  .canvas-wrap::before {
+    content: 'For the printable version, use the Download PDF button on this page.';
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.8em;
+    color: #555;
+  }
+}

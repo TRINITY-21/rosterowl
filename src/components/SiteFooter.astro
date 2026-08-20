@@ -1,0 +1,150 @@
+---
+import OwlMark from './OwlMark.svelte';
+
+interface Props {
+  note?: string;
+}
+const { note } = Astro.props;
+const year = new Date().getFullYear();
+
+const printables = [
+  { href: '/seating-chart/', label: 'Seating chart maker' },
+  { href: '/name-tags/', label: 'Name tags' },
+  { href: '/certificates/', label: 'Certificates' },
+  { href: '/checklist/', label: 'Checklist maker' },
+  { href: '/attendance/', label: 'Attendance sheets' },
+  { href: '/jobs-chart/', label: 'Classroom jobs chart' },
+];
+const classroom = [
+  { href: '/group-maker/', label: 'Group maker' },
+  { href: '/picker/', label: 'Random picker' },
+  { href: '/bingo/', label: 'Bingo cards' },
+  { href: '/flashcards/', label: 'Flashcards' },
+  { href: '/seating-chart/templates/', label: 'Layout templates' },
+];
+---
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <div class="foot-brand">
+      <a class="foot-mark" href="/" aria-label="RosterOwl home">
+        <OwlMark size={28} />
+        <span>RosterOwl</span>
+      </a>
+      <p class="foot-tagline">
+        One roster, every classroom tool. Free, no signup — student names never leave your browser.
+      </p>
+      <a class="foot-privacy" href="/privacy/">How privacy works →</a>
+    </div>
+    <nav class="foot-col" aria-label="Printable tools">
+      <h2>Printables</h2>
+      <ul>
+        {printables.map((l) => (
+          <li><a href={l.href}>{l.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+    <nav class="foot-col" aria-label="Classroom tools">
+      <h2>In the classroom</h2>
+      <ul>
+        {classroom.map((l) => (
+          <li><a href={l.href}>{l.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+  <div class="foot-base">
+    <span>© {year} RosterOwl · made for teachers{note ? ` · ${note}` : ''}</span>
+  </div>
+</footer>
+
+<style>
+  .site-foot {
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    padding: var(--space-6) var(--page-gutter) var(--space-5);
+    text-align: left;
+    font-size: var(--text-sm);
+  }
+
+  .foot-inner {
+    width: min(100%, var(--content-wide));
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(16rem, 1.4fr) 1fr 1fr;
+    gap: var(--space-6);
+  }
+
+  .foot-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .foot-tagline {
+    color: var(--muted);
+    max-width: 24rem;
+    margin: var(--space-3) 0;
+  }
+
+  .foot-privacy {
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .foot-privacy:hover {
+    text-decoration: underline;
+  }
+
+  .foot-col h2 {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: var(--space-3);
+  }
+
+  .foot-col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .foot-col a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .foot-col a:hover {
+    color: var(--brand);
+    text-decoration: underline;
+  }
+
+  .foot-base {
+    width: min(100%, var(--content-wide));
+    margin: var(--space-6) auto 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+
+  @media (max-width: 720px) {
+    .foot-inner {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .foot-brand {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

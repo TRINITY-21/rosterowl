@@ -1,0 +1,110 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import SeatingApp from '../../../components/SeatingApp.svelte';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'RosterOwl Seating Chart Maker — Keep Students Apart',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Any (web browser)',
+  url: 'https://rosterowl.com/seating-chart/keep-students-apart/',
+  description:
+    'Seating chart generator with keep-apart rules: mark any two students and every shuffle seats them away from each other. Free, no signup, names never leave your browser.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
+---
+
+<Layout
+  title="Seating Chart Generator to Keep Students Apart | RosterOwl"
+  description="Mark any two students 'keep apart' and every shuffle seats them away from each other — plus keep-together pairs, priority seating zones, and locked seats. The sample class below already has a rule set so you can see it work. Free, no signup."
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Seating chart', href: '/seating-chart/' },
+        { label: 'Keep students apart' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>Seating chart generator that keeps students apart</h1>
+      <p>
+        The sample class below already has a keep-apart rule — hit <strong>Shuffle</strong> a few
+        times and watch it hold. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <SeatingApp client:only="svelte" />
+
+    <section class="content">
+      <h2>Four rules that do the work</h2>
+      <p>
+        <strong>Keep apart</strong> — click a seated student, "Keep apart with…", click the other
+        one. Every shuffle from then on seats them away from each other (at tables, that means
+        <em>different tables</em>, since everyone in a pod is adjacent).
+        <strong>Keep together</strong> works the same in reverse — for the anxious student who does
+        better beside a friend, or a peer-support pairing.
+        <strong>Priority zones</strong> — paint desks "near teacher" or "away from door" and tag
+        the students who need them.
+        <strong>Locks</strong> — a seat that's finally working stays put through every reshuffle.
+      </p>
+      <h2>And one kind of honesty</h2>
+      <p>
+        Rules can collide — two keep-apart students in a two-desk room have nowhere to go. When a
+        combination is impossible, RosterOwl says so with a visible warning naming the students,
+        instead of silently breaking a rule and letting you find out mid-lesson. If it shuffles
+        clean, the rules held. Period.
+      </p>
+      <h2>Rules that follow the roster, not the chart</h2>
+      <p>
+        Keep-apart pairs live with your class list — switch from rows to a U-shape in the
+        <a href="/seating-chart/">seating chart maker</a>, or use the
+        <a href="/group-maker/">group maker</a>, and the same rules apply. Set them once in
+        September; they work all year. And none of it ever prints: charts show
+        <a href="/privacy/">names only</a>, so the wall copy and the substitute's copy reveal
+        nothing.
+      </p>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>How many keep-apart pairs can I set?</summary>
+          <p>
+            As many as you need — though every pair shrinks the number of valid arrangements. If
+            you over-constrain, the warning tells you exactly which rule couldn't be satisfied.
+          </p>
+        </details>
+        <details>
+          <summary>Can a student be in several rules at once?</summary>
+          <p>
+            Yes — apart from two classmates, together with a third, pinned near the teacher, all
+            at once. The shuffle juggles all of it.
+          </p>
+        </details>
+        <details>
+          <summary>Do rules apply to group work too?</summary>
+          <p>
+            Yes — the <a href="/group-maker/">group maker</a> reads the same rules, so keep-apart
+            pairs land in different groups automatically.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  /* Global sets the size and bottom margin; only the gap above each prose
+     heading is page-local. */
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+</style>

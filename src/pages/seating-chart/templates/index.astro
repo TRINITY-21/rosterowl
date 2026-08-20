@@ -1,0 +1,181 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import TemplateDownload from '../../../components/TemplateDownload.svelte';
+import { TEMPLATES } from '../../../lib/geometry';
+import { toolJsonLd } from '../../../lib/seo';
+import type { Desk } from '../../../lib/types';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Seating Chart Templates',
+  path: '/seating-chart/templates/',
+  description:
+    'Blank, one-page PDF seating chart templates for every common classroom layout — rows, table groups of 4 and 6, pairs, and U-shape. Free, no signup, no watermark, or fill them in automatically with your class list.',
+});
+
+// Build-time SVG previews: real geometry, zero client JS.
+function previewSvg(desks: Desk[], label: string): { svg: string; count: number } {
+  const xs = desks.map((d) => d.x);
+  const ys = desks.map((d) => d.y);
+  const minX = Math.min(...xs) - 0.4;
+  const minY = Math.min(...ys) - 0.4;
+  const w = Math.max(...xs) - minX + 1.4;
+  const h = Math.max(...ys) - minY + 1.4;
+  const S = 18;
+  const rects = desks
+    .map(
+      (d) =>
+        `<rect x="${((d.x - minX) * S).toFixed(1)}" y="${((d.y - minY) * S).toFixed(1)}" width="${(S * 0.95).toFixed(1)}" height="${(S * 0.78).toFixed(1)}" rx="2.5" fill="var(--surface)" stroke="var(--line-strong)" stroke-width="1"/>`
+    )
+    .join('');
+  return {
+    svg: `<svg viewBox="0 0 ${(w * S).toFixed(0)} ${(h * S).toFixed(0)}" role="img" aria-label="${label.replaceAll('"', '&quot;')} desk layout preview" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`,
+    count: desks.length,
+  };
+}
+
+// Two templates already have dedicated landing pages; the rest carry their key
+// through so the maker can start from the layout the teacher just picked.
+const LANDING: Record<string, string> = {
+  'u-26': '/seating-chart/u-shape/',
+  'groups4-6': '/seating-chart/table-groups-of-4/',
+};
+
+const cards = TEMPLATES.map((t) => {
+  const desks = t.make();
+  return {
+    key: t.key,
+    label: t.label,
+    href: LANDING[t.key] ?? `/seating-chart/?preset=${encodeURIComponent(t.key)}`,
+    ...previewSvg(desks, t.label),
+  };
+});
+---
+
+<Layout
+  title="Printable Seating Chart Templates (Free PDFs) | RosterOwl"
+  description="Blank, printable classroom seating chart templates as clean one-page PDFs: rows, table groups of 4 and 6, pairs, and U-shape layouts. Free, no signup, no watermark — or fill them in automatically with your class list."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Seating chart', href: '/seating-chart/' },
+        { label: 'Templates' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>Printable seating chart templates</h1>
+      <p>
+        Blank, one-page PDF seating charts for every common classroom layout — free, no watermark,
+        no signup. Print one and write names in… or
+        <a href="/seating-chart/">paste your class list</a> and let RosterOwl fill the seats,
+        keep the chatty kids apart, and reshuffle any time.
+      </p>
+    </div>
+
+    <div class="grid">
+      {cards.map((c) => (
+        <div class="card">
+          <div class="preview" set:html={c.svg} />
+          <div class="row">
+            <div>
+              <h2>{c.label.split(' — ')[0]}</h2>
+              <p>{c.label.split(' — ')[1] ?? `${c.count} desks`}</p>
+            </div>
+            <div class="actions">
+              <a class="btn small" href={c.href} aria-label={`Open ${c.label} in the seating chart maker`}>
+                Open in maker
+              </a>
+              <TemplateDownload client:load templateKey={c.key} label={c.label} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <section class="upsell">
+      <h2>Tired of writing names in by hand?</h2>
+      <p>
+        The <a href="/seating-chart/">RosterOwl seating chart maker</a> starts from any of these
+        layouts, then lets you drag desks to match your real room, set keep-apart rules, and
+        download the finished chart with every name placed — still free, still no signup, and your
+        class list never leaves your browser.
+      </p>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  /* Page width, gutters and the heading block come from .tool-page and
+     .page-head in global.css — nothing local may override them. */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--space-4);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow-1);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .preview {
+    background: var(--canvas-bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    padding: var(--space-3);
+    display: grid;
+    place-items: center;
+    min-height: 9rem;
+  }
+  .preview :global(svg) {
+    width: 100%;
+    max-height: 9rem;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .row h2 {
+    font-size: var(--text-base);
+  }
+  .row p {
+    margin: var(--space-1) 0 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+  .upsell {
+    max-width: var(--content-narrow);
+    margin-top: var(--space-7);
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+    border-radius: var(--radius-l);
+    padding: var(--space-4) var(--space-5);
+  }
+  .upsell h2 {
+    font-size: var(--text-xl);
+  }
+  .upsell p {
+    color: var(--muted);
+    margin-bottom: 0;
+  }
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2);
+  }
+</style>

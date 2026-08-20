@@ -1,0 +1,114 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import SeatingApp from '../../../components/SeatingApp.svelte';
+import TemplateDownload from '../../../components/TemplateDownload.svelte';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'RosterOwl Seating Chart Maker — Table Groups of 4',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Any (web browser)',
+  url: 'https://rosterowl.com/seating-chart/table-groups-of-4/',
+  description:
+    'Seating chart maker pre-set to table groups of 4: assign your class to tables, keep chatty students at different tables, and print a one-page chart. Free, no signup.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
+---
+
+<Layout
+  title="Table Groups of 4 Seating Chart Maker | RosterOwl"
+  description="Make a seating chart for table groups of 4: paste your class list, keep chatty students at different tables, balance each pod, and print a clean one-page chart. Starts pre-set to six tables of four — add or move tables to match your room. Free, no signup."
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Seating chart', href: '/seating-chart/' },
+        { label: 'Table groups of 4' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>Seating chart maker — table groups of 4</h1>
+      <p>
+        Pre-set to six tables of four below. Paste your class list, drag tables to match your
+        room, and shuffle — students you mark "keep apart" land at <em>different tables</em>, not
+        just different chairs. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <SeatingApp client:only="svelte" preset="groups4-6" />
+
+    <section class="content">
+      <h2>What's different about seating charts for table groups</h2>
+      <p>
+        In rows, "keep those two apart" means a few desks of distance. At tables, everyone in the
+        pod is effectively adjacent — so RosterOwl treats the whole table as one neighborhood:
+        a keep-apart pair is never placed at the same table, and a keep-together pair always is.
+        That's the thing a generic randomizer gets wrong about pods.
+      </p>
+      <p>
+        Odd class sizes are normal, not an error. 26 students at tables of four means six full
+        tables and one pair — add a "pair" cluster in arrange mode, or leave two seats empty at a
+        table for your next new student. Empty desks stay empty when you shuffle if you lock them.
+      </p>
+      <p>
+        Pods aren't a separate app: this is the <a href="/seating-chart/">RosterOwl seating chart
+        maker</a> opened on a tables-of-4 room. When the unit ends and you want rows back for
+        testing, switch the layout there — same class list, same rules, no retyping.
+      </p>
+      <h2>Prefer to write names by hand?</h2>
+      <p class="tpl-row">
+        <TemplateDownload client:load templateKey="groups4-6" label="Table groups of 4 — 6 tables (24)" />
+        <span>Blank tables-of-4 chart as a clean one-page PDF, no watermark — or browse
+        <a href="/seating-chart/templates/">every layout</a>.</span>
+      </p>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Can I mix tables of 4 with a few pairs or single desks?</summary>
+          <p>
+            Yes — switch to arrange mode and add pairs or single desks anywhere. Real rooms are
+            mixed; the template is just a starting point.
+          </p>
+        </details>
+        <details>
+          <summary>Can it balance groups by ability or behavior?</summary>
+          <p>
+            RosterOwl deliberately doesn't store ability or behavior data (that stays in your
+            head, where it's private). What it gives you: keep-apart, keep-together, priority
+            seating zones, locks — and instant reshuffles until the mix looks right to you.
+          </p>
+        </details>
+        <details>
+          <summary>Does the printed chart show my rules?</summary>
+          <p>
+            Never. Printed charts show names only — safe to hang on the wall or hand a substitute.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  /* Global sets the size and bottom margin; only the gap above each prose
+     heading is page-local. */
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+  .tpl-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+</style>

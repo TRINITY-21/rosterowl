@@ -1,0 +1,110 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import PickerApp from '../../components/PickerApp.svelte';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Student Picker',
+  path: '/picker/',
+  description:
+    'Fair random student picker for teachers: no repeats until everyone has had a turn, absent students skipped automatically. Free, no signup — names never leave your browser.',
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim.
+const faqLd = faqJsonLd([
+  {
+    q: `What happens when everyone's been picked?`,
+    a: `A new round starts automatically (with a little note so you know), and the counter resets. You can also reset the round yourself any time.`,
+  },
+  {
+    q: `Does it remember the round if I close the tab?`,
+    a: `Yes — round progress is saved in your browser with the rest of your class data, so Monday's round continues on Tuesday if you want it to.`,
+  },
+  {
+    q: `Can I use it on the projector?`,
+    a: `That's the idea — the picked name fills the screen, and the space bar picks the next student so you can do it from the keyboard. There's a chalkboard dark mode, too.`,
+  },
+]);
+---
+
+<Layout
+  title="Fair Random Student Picker — No Repeats | RosterOwl"
+  description="Pick students fairly: no repeats until everyone has had a turn, absent students skipped automatically, round progress you can show the class. Uses the same class list as your seating chart. Free, no signup — names never leave your browser."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Random student picker</h1>
+      <p>
+        Fair cold-calling: nobody gets picked twice until everyone's had a turn, and absent
+        students are skipped automatically. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <PickerApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why this picker is fair</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>Actually fair</h3>
+          <p>
+            A plain name wheel can call the same kid three times in a row. RosterOwl tracks the
+            round: everyone gets exactly one turn before anyone gets a second — and the class can
+            see the progress bar prove it.
+          </p>
+        </div>
+        <div>
+          <h3>Absence-aware</h3>
+          <p>
+            Marked someone absent in the seating chart this morning? The picker skips them
+            automatically — no awkward "oh, they're not here."
+          </p>
+        </div>
+        <div>
+          <h3>One roster, shared</h3>
+          <p>
+            No re-typing 28 names into a wheel. Your class list is already here, shared with the
+            seating chart and group maker.
+          </p>
+        </div>
+        <div>
+          <h3>Private by architecture</h3>
+          <p>Runs entirely in your browser. No accounts, no uploads, no tracking.</p>
+        </div>
+      </div>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>What happens when everyone's been picked?</summary>
+          <p>
+            A new round starts automatically (with a little note so you know), and the counter
+            resets. You can also reset the round yourself any time.
+          </p>
+        </details>
+        <details>
+          <summary>Does it remember the round if I close the tab?</summary>
+          <p>
+            Yes — round progress is saved in your browser with the rest of your class data, so
+            Monday's round continues on Tuesday if you want it to.
+          </p>
+        </details>
+        <details>
+          <summary>Can I use it on the projector?</summary>
+          <p>
+            That's the idea — the picked name fills the screen, and the space bar picks the next
+            student so you can do it from the keyboard. There's a chalkboard dark mode, too.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+

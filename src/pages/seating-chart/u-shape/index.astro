@@ -1,0 +1,114 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import SeatingApp from '../../../components/SeatingApp.svelte';
+import TemplateDownload from '../../../components/TemplateDownload.svelte';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'RosterOwl Seating Chart Maker — U-Shape / Horseshoe',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Any (web browser)',
+  url: 'https://rosterowl.com/seating-chart/u-shape/',
+  description:
+    'U-shape (horseshoe) classroom seating chart maker: assign your class around the U, keep chatty students from sitting side by side, and print a one-page chart. Free, no signup.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
+---
+
+<Layout
+  title="U-Shape / Horseshoe Seating Chart Maker | RosterOwl"
+  description="Make a U-shape (horseshoe) seating chart: paste your class list, place students around the U, keep talkers from sitting side by side, and print a clean one-page chart. Pre-set to a 26-desk horseshoe — resize it to match your room. Free, no signup."
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Seating chart', href: '/seating-chart/' },
+        { label: 'U-shape seating' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>U-shape seating chart maker</h1>
+      <p>
+        Pre-set to a 26-desk horseshoe below — the layout for discussion-heavy classes, where
+        everyone can see everyone and you can reach every student in two steps. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <SeatingApp client:only="svelte" preset="u-26" />
+
+    <section class="content">
+      <h2>Getting the U right</h2>
+      <p>
+        The horseshoe's superpower is sightlines — and its trap is the corners, where neighbors
+        sit closest and side conversations start. Two RosterOwl habits help: mark your chattiest
+        pairs "keep apart" — a shuffle then never seats them side by side, not even around the
+        corners — and paint the two seats beside your teaching spot as the near-teacher zone for
+        students who need the front. Then shuffle until it clicks.
+      </p>
+      <p>
+        Class bigger than the U? Add an inner row of desks in arrange mode (a "double U") or park
+        extra students in the tray until you've rearranged. Smaller class? Empty desks print as
+        empty — or delete them and tighten the horseshoe.
+      </p>
+      <p>
+        This page is the full <a href="/seating-chart/">RosterOwl seating chart maker</a>, just
+        opened on a horseshoe. Decide the U isn't working? Switch the room to rows or table groups
+        from the same screen — your class list, keep-apart rules and locked seats all come with you.
+      </p>
+      <h2>Prefer to write names by hand?</h2>
+      <p class="tpl-row">
+        <TemplateDownload client:load templateKey="u-26" label="U-shape — 26 desks" />
+        <span>Blank 26-desk horseshoe as a one-page PDF, no watermark — 20-desk and
+        <a href="/seating-chart/templates/">every other layout</a> in the gallery.</span>
+      </p>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Who counts as "next to each other" in a U?</summary>
+          <p>
+            Immediate neighbors along the U — including around the corners, where students
+            actually sit closest. Keep-apart pairs are never placed side by side.
+          </p>
+        </details>
+        <details>
+          <summary>Can I make a double horseshoe?</summary>
+          <p>
+            Yes — start from the U template, then add desks in arrange mode and drag them into an
+            inner arc. The chart prints whatever your real room looks like.
+          </p>
+        </details>
+        <details>
+          <summary>Rows one term, U-shape the next — do I re-enter my class?</summary>
+          <p>
+            No. Your class list is separate from the room, so switching layouts is one template
+            click — names, rules and absences all carry over.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  /* Global sets the size and bottom margin; only the gap above each prose
+     heading is page-local. */
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+  .tpl-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+</style>

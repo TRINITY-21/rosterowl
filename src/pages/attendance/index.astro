@@ -1,0 +1,109 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import AttendanceApp from '../../components/AttendanceApp.svelte';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Attendance Sheet Generator',
+  path: '/attendance/',
+  description:
+    'Printable monthly attendance sheet with your students already listed: pick a month and download a one-page register — roster down the side, every school day (Mon–Fri) across the top. Free, no signup — names never leave your browser.',
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim.
+const faqLd = faqJsonLd([
+  {
+    q: `What do the blank cells mean?`,
+    a: `Whatever you want them to. Mark it your way — ✓ present, A absent, T tardy — it's your system; the sheet just gives you the grid.`,
+  },
+  {
+    q: `What about holidays in the middle of the month?`,
+    a: `Cross them out or leave the column blank — the grid lists every Mon–Fri and doesn't assume anything about your district's calendar.`,
+  },
+  {
+    q: `A new student joined — do I redo the sheet?`,
+    a: `Add them once to your class list and every future sheet includes them, re-alphabetized automatically. That's the point of the shared roster.`,
+  },
+]);
+---
+
+<Layout
+  title="Printable Attendance Sheet — Monthly Grid | RosterOwl"
+  description="Monthly attendance register in one click: your class list down the side, the month's real school days (Mon–Fri) across the top, blank cells for your own marks. One page, numbered, alphabetized. Free, no signup."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Monthly attendance sheet</h1>
+      <p>
+        Pick a month — your students down the side, every school day (Mon–Fri) across the top,
+        blank cells for your own marks. One page, numbered, alphabetized. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <AttendanceApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why teachers use it</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>The month is pre-built</h3>
+          <p>
+            Pick a month and the grid fills itself with that month's real Mon–Fri dates — the day
+            number and weekday over every column. No more counting weekday cells in Excel each
+            month.
+          </p>
+        </div>
+        <div>
+          <h3>A register that looks like a register</h3>
+          <p>
+            Rows are numbered (headcounts in one glance) and sorted how registers actually work —
+            "Last, First" A→Z — or by first name, or in your roster order.
+          </p>
+        </div>
+        <div>
+          <h3>Always one page</h3>
+          <p>
+            Rows and day columns size themselves to fit the whole class and the whole month on a
+            single sheet — even a 22-school-day month.
+          </p>
+        </div>
+        <div>
+          <h3>Private by architecture</h3>
+          <p>Runs entirely in your browser. No accounts, no uploads, nothing stored anywhere but your device.</p>
+        </div>
+      </div>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>What do the blank cells mean?</summary>
+          <p>
+            Whatever you want them to. Mark it your way — ✓ present, A absent, T tardy — it's
+            your system; the sheet just gives you the grid.
+          </p>
+        </details>
+        <details>
+          <summary>What about holidays in the middle of the month?</summary>
+          <p>
+            Cross them out or leave the column blank — the grid lists every Mon–Fri and doesn't
+            assume anything about your district's calendar.
+          </p>
+        </details>
+        <details>
+          <summary>A new student joined — do I redo the sheet?</summary>
+          <p>
+            Add them once to your class list and every future sheet includes them,
+            re-alphabetized automatically. That's the point of the shared roster.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>

@@ -1,0 +1,113 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import GroupMakerApp from '../../components/GroupMakerApp.svelte';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Group Maker',
+  path: '/group-maker/',
+  description:
+    'Free random group generator for teachers that keeps chosen students apart or together. Balanced groups from your class list, printable PDF, no signup — names never leave your browser.',
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim.
+const faqLd = faqJsonLd([
+  {
+    q: `Can it keep certain students out of the same group?`,
+    a: `Yes — the same keep-apart and keep-together rules you set in the seating chart apply here (toggle "Honor seating rules"). If a combination is impossible, it says so plainly instead of quietly breaking a rule.`,
+  },
+  {
+    q: `What happens with a class of 22 and groups of 4?`,
+    a: `You get six groups: four groups of 4 and two groups of 3 — never a lonely leftover group of 2 unless the math forces it.`,
+  },
+  {
+    q: `Do I have to re-type my class list?`,
+    a: `No. If you've used the seating chart, your classes are already here. One roster powers every RosterOwl tool.`,
+  },
+]);
+---
+
+<Layout
+  title="Random Group Generator That Keeps Students Apart | RosterOwl"
+  description="Split your class into balanced random groups that keep chosen students apart (or together). Uses the same class list as your seating chart, prints a clean one-page PDF, and skips absent students. Free, no signup — names never leave your browser."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Random group maker for the classroom</h1>
+      <p>
+        Balanced groups from your class list — honoring your keep-apart rules, skipping absent
+        students. Free · no signup · <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <GroupMakerApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why teachers use it</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>Fair, not chaotic</h3>
+          <p>
+            Groups come out even — within one student of each other (keep-together sets bigger
+            than the group size stay whole, so they can run over) — and your keep-apart
+            pairs stay apart, unlike a plain name-list randomizer.
+          </p>
+        </div>
+        <div>
+          <h3>One roster, shared</h3>
+          <p>
+            The same class list powers your seating chart and your groups. Marked someone absent
+            this morning? They're skipped here automatically.
+          </p>
+        </div>
+        <div>
+          <h3>Print and go</h3>
+          <p>
+            One-page PDF with numbered group boxes — project it or pin it up. Ink-saver mode for
+            the school printer.
+          </p>
+        </div>
+        <div>
+          <h3>Private by architecture</h3>
+          <p>
+            Everything runs in your browser. No accounts, no uploads, nothing stored anywhere but
+            your own device.
+          </p>
+        </div>
+      </div>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Can it keep certain students out of the same group?</summary>
+          <p>
+            Yes — the same keep-apart and keep-together rules you set in the seating chart apply
+            here (toggle "Honor seating rules"). If a combination is impossible, it says so
+            plainly instead of quietly breaking a rule.
+          </p>
+        </details>
+        <details>
+          <summary>What happens with a class of 22 and groups of 4?</summary>
+          <p>
+            You get six groups: four groups of 4 and two groups of 3 — never a lonely leftover
+            group of 2 unless the math forces it.
+          </p>
+        </details>
+        <details>
+          <summary>Do I have to re-type my class list?</summary>
+          <p>
+            No. If you've used the seating chart, your classes are already here. One roster powers
+            every RosterOwl tool.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+

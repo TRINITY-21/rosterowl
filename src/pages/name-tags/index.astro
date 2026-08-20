@@ -1,0 +1,110 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import NameTagsApp from '../../components/NameTagsApp.svelte';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Name Tags & Desk Plates',
+  path: '/name-tags/',
+  description:
+    'Name tags and desk plates for the whole class from your student list: desk plates two per page or badge sheets eight per page, one PDF, no name typed twice. Free, no signup.',
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim.
+const faqLd = faqJsonLd([
+  {
+    q: `Will the 8-per-sheet tags line up with my label sheets?`,
+    a: `They're sized to match Avery 5395-style badge sheets (2⅓″ × 3⅜″, 2 × 4 grid). On plain paper, use the dashed cut guides. Do a one-page test print first — printers vary.`,
+  },
+  {
+    q: `First names only?`,
+    a: `Toggle "Show last names" off — first names print big and friendly, which is the usual choice for elementary desk plates.`,
+  },
+  {
+    q: `Can I add my class name to each tag?`,
+    a: `Yes — the optional corner label prints small in the corner of every tag: class name, room number, "Field trip — May 12", anything.`,
+  },
+]);
+---
+
+<Layout
+  title="Class Name Tag & Desk Plate Generator | RosterOwl"
+  description="Every student's name tag or desk plate in one click: paste your class list, pick desk plates (2 per page) or badge sheets (8 per sheet, fits Avery 5395), and print one PDF. Cut guides included. Free, no signup — names never leave your browser."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Name tags &amp; desk plates for the whole class</h1>
+      <p>
+        Back-to-school's most-typed words are your students' names. Type them zero times: one
+        click makes a plate or tag for everyone. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <NameTagsApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why teachers use it</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>Two styles, one roster</h3>
+          <p>
+            Big <strong>desk plates</strong> (two per page) for tables and cubbies, or
+            <strong>badge-sheet tags</strong> (eight per sheet, sized for Avery 5395) for field
+            trips and the first week of school.
+          </p>
+        </div>
+        <div>
+          <h3>Print, cut, done</h3>
+          <p>
+            Dashed cut guides between tags, names auto-sized so "Ana" and
+            "Alexandriana" both fill their tag beautifully, and diacritics kept intact.
+          </p>
+        </div>
+        <div>
+          <h3>One PDF for the class</h3>
+          <p>
+            The usual template sites make you type each name and download 28 files — or watermark
+            the result. Here: one click, one file, zero watermarks.
+          </p>
+        </div>
+        <div>
+          <h3>Private by architecture</h3>
+          <p>Runs entirely in your browser. No accounts, no uploads, nothing stored anywhere but your device.</p>
+        </div>
+      </div>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Will the 8-per-sheet tags line up with my label sheets?</summary>
+          <p>
+            They're sized to match Avery 5395-style badge sheets (2⅓″ × 3⅜″, 2 × 4 grid). On plain
+            paper, use the dashed cut guides. Do a one-page test print first — printers vary.
+          </p>
+        </details>
+        <details>
+          <summary>First names only?</summary>
+          <p>
+            Toggle "Show last names" off — first names print big and friendly, which is the usual
+            choice for elementary desk plates.
+          </p>
+        </details>
+        <details>
+          <summary>Can I add my class name to each tag?</summary>
+          <p>
+            Yes — the optional corner label prints small in the corner of every tag: class name,
+            room number, "Field trip — May 12", anything.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+

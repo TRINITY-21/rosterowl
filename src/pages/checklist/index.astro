@@ -1,0 +1,111 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import ChecklistApp from '../../components/ChecklistApp.svelte';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Class Checklist Generator',
+  path: '/checklist/',
+  description:
+    'Printable class checklist with your students already listed: name the columns (homework, permission slips, signatures) and download a clean one-page grid. Free, no signup — names never leave your browser.',
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim.
+const faqLd = faqJsonLd([
+  {
+    q: `What do teachers actually use this for?`,
+    a: `Homework turn-in (Mon–Fri columns — there's a one-click preset), permission slips, picture-day forms, library book returns, field-trip headcounts, materials checkout, parent-signature tracking, station rotations… any "who's done it" question.`,
+  },
+  {
+    q: `Can I leave the column headers blank?`,
+    a: `Yes — blank headers print as empty boxes you can label by hand, which makes one printout reusable for anything all term.`,
+  },
+  {
+    q: `A new student joined — do I redo my grid?`,
+    a: `Add them once to your class list and every future checklist includes them, re-alphabetized automatically. That's the point of the shared roster.`,
+  },
+]);
+---
+
+<Layout
+  title="Class Checklist Generator — Printable Grid | RosterOwl"
+  description="Stop rebuilding the same grid in Excel: your class list down the side, your columns across the top — homework turn-in, permission slips, library books, signatures. One page, numbered, alphabetized, ready to print. Free, no signup."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Class checklist generator</h1>
+      <p>
+        Your students down the side, your columns across the top — permission slips, homework,
+        library books, anything. One page, numbered, alphabetized. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <ChecklistApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why teachers use it</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>The grid you keep rebuilding</h3>
+          <p>
+            Every teacher has made this in Excel: names in column A, this week across the top.
+            Here it takes one click, stays alphabetized when a new student arrives, and never
+            loses its formatting.
+          </p>
+        </div>
+        <div>
+          <h3>Numbered and sorted</h3>
+          <p>
+            Rows are numbered (headcounts in one glance) and sorted how registers actually work —
+            "Last, First" A→Z — or by first name, or in your roster order.
+          </p>
+        </div>
+        <div>
+          <h3>Always one page</h3>
+          <p>
+            Rows size themselves to fit the whole class on a single sheet — 40 students and ten
+            columns still fit in landscape.
+          </p>
+        </div>
+        <div>
+          <h3>Private by architecture</h3>
+          <p>Runs entirely in your browser. No accounts, no uploads, nothing stored anywhere but your device.</p>
+        </div>
+      </div>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>What do teachers actually use this for?</summary>
+          <p>
+            Homework turn-in (Mon–Fri columns — there's a one-click preset), permission slips,
+            picture-day forms, library book returns, field-trip headcounts, materials checkout,
+            parent-signature tracking, station rotations… any "who's done it" question.
+          </p>
+        </details>
+        <details>
+          <summary>Can I leave the column headers blank?</summary>
+          <p>
+            Yes — blank headers print as empty boxes you can label by hand, which makes one
+            printout reusable for anything all term.
+          </p>
+        </details>
+        <details>
+          <summary>A new student joined — do I redo my grid?</summary>
+          <p>
+            Add them once to your class list and every future checklist includes them,
+            re-alphabetized automatically. That's the point of the shared roster.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+

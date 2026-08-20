@@ -1,0 +1,108 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import SeatingApp from '../../../components/SeatingApp.svelte';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'RosterOwl Seating Chart Maker — Substitute-Ready Charts',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Any (web browser)',
+  url: 'https://rosterowl.com/seating-chart/for-substitutes/',
+  description:
+    'Print a substitute-ready seating chart: extra-large names readable from the front of the room, one page, and nothing confidential on it. Free, no signup.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
+---
+
+<Layout
+  title="Seating Chart for Substitute Teachers | RosterOwl"
+  description="Leave your sub a chart that actually helps: extra-large names readable from the front of the room, the whole class on one page, and zero confidential information — accommodations and rules never print. Free, no signup."
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Seating chart', href: '/seating-chart/' },
+        { label: 'For substitutes' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>Seating charts your substitute can actually use</h1>
+      <p>
+        Big names, one page, nothing private. Make the chart below, crank the name size in the PDF
+        dialog, and it's sub-binder ready. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <SeatingApp client:only="svelte" />
+
+    <section class="content">
+      <h2>What a sub chart needs (and what it must never have)</h2>
+      <p>
+        A substitute glances at the chart from the front of the room, mid-sentence, while
+        twenty-eight strangers test the boundaries. So the chart needs <strong>names readable at
+        distance</strong> — in the PDF dialog, drag the name-size slider up and the layout adapts
+        while staying on one page. It needs the <strong>room drawn the way it actually is</strong>,
+        door and teacher desk marked, so "the pair by the window" means something.
+      </p>
+      <p>
+        Just as important is what it must <em>never</em> include: which student has priority
+        seating and why, who's on a behavior plan, your keep-apart pairs. That information is
+        confidential — and in RosterOwl it is <strong>structurally unprintable</strong>. Rules,
+        zones and absence marks exist only on your screen; every printed or downloaded chart is
+        names only. You don't have to remember to hide anything.
+      </p>
+      <h2>The two-minute sub prep</h2>
+      <p>
+        Lock any seats that must not drift, download the PDF at large name size, and print two
+        copies — one for the binder, one for the desk. Nothing here is a separate sub-only tool:
+        it is the everyday <a href="/seating-chart/">RosterOwl seating chart maker</a>, so the
+        chart you keep current all year is the chart your sub gets. Prepping a full substitute pack
+        (schedule, notes, and chart in one printable) is on the roadmap for winter, built from the
+        same roster.
+      </p>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Can the sub mark attendance on it?</summary>
+          <p>
+            Yes — each printed desk has open space around the name, so ticking off students with a
+            pen works fine. Keep the name size a notch below maximum if you want more room to
+            write.
+          </p>
+        </details>
+        <details>
+          <summary>What if a student moved seats since I printed it?</summary>
+          <p>
+            Charts regenerate in seconds — update the seat, re-download, reprint. Locked seats
+            make sure the rest of the room doesn't shift in the process.
+          </p>
+        </details>
+        <details>
+          <summary>Is there a whole substitute binder tool?</summary>
+          <p>
+            Coming this winter: chart + schedule + class notes as one printable pack, powered by
+            the same class list. The chart above is the foundation of it.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  /* Global sets the size and bottom margin; only the gap above each prose
+     heading is page-local. */
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+</style>

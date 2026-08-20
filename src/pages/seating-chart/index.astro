@@ -1,0 +1,188 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SeatingApp from '../../components/SeatingApp.svelte';
+import SiteFooter from '../../components/SiteFooter.astro';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Seating Chart Maker',
+  path: '/seating-chart/',
+  description:
+    'Free classroom seating chart maker with keep-apart rules, irregular room layouts, and one-page PDF printing. No signup, unlimited students, names never leave your browser.',
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim (inline <em> stripped).
+const faqLd = faqJsonLd([
+  {
+    q: `Is it really free? What's the catch?`,
+    a: `Free, no signup, no watermark, no student cap. RosterOwl has no server costs to recover — the whole tool runs in your browser — so the free tool is the product, and the plan is to keep adding classroom tools around your roster.`,
+  },
+  {
+    q: `Where is my class list stored?`,
+    a: `On your own device, in your browser's local storage. It never touches a server. That also means it lives in this browser — use "Save backup file" to move it to another computer or keep a copy safe.`,
+  },
+  {
+    q: `Can it handle my room? It's not neat rows.`,
+    a: `Yes — that's the point. Templates are just starting points: add and delete individual desks, drag whole tables around, leave gaps. Empty desks are fine, and extra students wait in a tray until you seat them.`,
+  },
+  {
+    q: `Does "keep apart" actually work when I shuffle?`,
+    a: `The shuffle honors every rule it can, and tells you plainly when a combination is impossible (say, two keep-apart students in a two-desk room) instead of silently breaking a rule.`,
+  },
+  {
+    q: `Will the printed chart show who has priority seating?`,
+    a: `Never. Zones, rules and absences exist only on your screen. Printed and downloaded charts show names only — safe for the wall and for substitutes.`,
+  },
+  {
+    q: `Does it work for middle school with multiple periods?`,
+    a: `Yes — rooms and classes are separate. Set up your room once, and every class period shares it with its own roster, rules and seating.`,
+  },
+]);
+---
+
+<Layout
+  title="Free Seating Chart Maker — Keeps Students Apart | RosterOwl"
+  description="Make a classroom seating chart in minutes: rebuild your real room, set keep-apart and keep-together rules, shuffle fairly, and download a clean one-page PDF. Free, no signup, unlimited students — names never leave your browser."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Classroom seating chart maker</h1>
+      <p>
+        Rebuild your real room, keep the chatty kids apart, and print a chart that actually fits on
+        one page. Free · no signup · <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <SeatingApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why teachers use it</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>Your room, not a template</h3>
+          <p>
+            Start from rows or table groups, then drag desks anywhere — five tables plus a stray
+            pair by the window, gaps for the door, odd class sizes. If your room is irregular (whose
+            isn't?), the chart still matches it.
+          </p>
+        </div>
+        <div>
+          <h3>Keep-apart rules that stick</h3>
+          <p>
+            Mark any two students "keep apart" (or "keep together"), pin someone to the
+            near-teacher zone, lock seats that are working — then shuffle. Every arrangement honors
+            your rules, and warns you when something can't be satisfied.
+          </p>
+        </div>
+        <div>
+          <h3>One page, every time</h3>
+          <p>
+            Direct PDF download — no fighting the print dialog. Letter or A4, landscape or
+            portrait, big-name mode for substitutes, and an ink-saver mode for the school laser
+            printer.
+          </p>
+        </div>
+        <div>
+          <h3>Private by architecture</h3>
+          <p>
+            The whole tool runs in your browser. Your class list is stored on your device and never
+            uploaded — there is no server to send it to. Seating rules and absences never appear on
+            printed charts.
+          </p>
+        </div>
+      </div>
+
+      <p class="variants">
+        Popular setups, pre-configured: <a href="/seating-chart/table-groups-of-4/">table groups
+        of 4</a> · <a href="/seating-chart/u-shape/">U-shape / horseshoe</a> ·
+        <a href="/seating-chart/keep-students-apart/">keep students apart</a> ·
+        <a href="/seating-chart/for-substitutes/">substitute-ready charts</a> · or grab
+        <a href="/seating-chart/templates/">blank printable templates</a> for every layout.
+      </p>
+
+      <section class="how">
+        <h2>How it works</h2>
+        <ol>
+          <li>
+            <strong>Paste your class list.</strong> Straight from Google Classroom's People page,
+            your gradebook, or any list — "Last, First", emails and student IDs are cleaned up
+            automatically.
+          </li>
+          <li>
+            <strong>Make the room yours.</strong> Pick a starting layout, then add, delete and drag
+            desks until it matches your actual classroom. Paint a "near teacher" zone for students
+            who need priority seating.
+          </li>
+          <li>
+            <strong>Set rules and shuffle.</strong> Keep-apart pairs, keep-together pairs, locked
+            seats — then shuffle until it feels right, and download the PDF.
+          </li>
+        </ol>
+      </section>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>Is it really free? What's the catch?</summary>
+          <p>
+            Free, no signup, no watermark, no student cap. RosterOwl has no server costs to recover
+            — the whole tool runs in your browser — so the free tool <em>is</em> the product, and
+            the plan is to keep adding classroom tools around your roster.
+          </p>
+        </details>
+        <details>
+          <summary>Where is my class list stored?</summary>
+          <p>
+            On your own device, in your browser's local storage. It never touches a server. That
+            also means it lives in <em>this</em> browser — use "Save backup file" to move it to
+            another computer or keep a copy safe.
+          </p>
+        </details>
+        <details>
+          <summary>Can it handle my room? It's not neat rows.</summary>
+          <p>
+            Yes — that's the point. Templates are just starting points: add and delete individual
+            desks, drag whole tables around, leave gaps. Empty desks are fine, and extra students
+            wait in a tray until you seat them.
+          </p>
+        </details>
+        <details>
+          <summary>Does "keep apart" actually work when I shuffle?</summary>
+          <p>
+            The shuffle honors every rule it can, and tells you plainly when a combination is
+            impossible (say, two keep-apart students in a two-desk room) instead of silently
+            breaking a rule.
+          </p>
+        </details>
+        <details>
+          <summary>Will the printed chart show who has priority seating?</summary>
+          <p>
+            Never. Zones, rules and absences exist only on your screen. Printed and downloaded
+            charts show names only — safe for the wall and for substitutes.
+          </p>
+        </details>
+        <details>
+          <summary>Does it work for middle school with multiple periods?</summary>
+          <p>
+            Yes — rooms and classes are separate. Set up your room once, and every class period
+            shares it with its own roster, rules and seating.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter note="set in Atkinson Hyperlegible, a typeface designed for readers with low vision" />
+</Layout>
+
+<style>
+  .variants {
+    margin-top: var(--space-6);
+    background: var(--surface-2);
+    border-radius: var(--radius-m);
+    padding: var(--space-3) var(--space-4);
+  }
+</style>

@@ -1,0 +1,120 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import BingoApp from '../../components/BingoApp.svelte';
+import { toolJsonLd, faqJsonLd } from '../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Classroom Bingo Card Generator',
+  path: '/bingo/',
+  description:
+    "Printable classroom bingo cards — every card a unique shuffle of your students' names or your own word list, with a caller's list included. Free, no signup — names never leave your browser.",
+});
+
+// Mirrors the visible <section class="faq"> below, verbatim.
+const faqLd = faqJsonLd([
+  {
+    q: `How different can the cards really be?`,
+    a: `A 4×4 card uses 16 of your items in a random arrangement, so even a modest pool allows an enormous number of possible cards — with 20 items there are thousands of ways to pick the squares before you even count the orderings. The generator also compares every new card against the ones before it and reshuffles exact repeats, so each card in your set is unique. If a grid size needs more items than you have, it's simply unavailable until you add a few more.`,
+  },
+  {
+    q: `Can I reuse my word list?`,
+    a: `Yes — it's saved with your class, on your device. Come back next week and the same list is in the box, ready to tweak or print again. Each class keeps its own list.`,
+  },
+  {
+    q: `What goes in the free space?`,
+    a: `On 3×3 and 5×5 grids the free-center toggle prints “FREE” in the middle square (with a soft highlight, or plain in ink-saver mode), and it counts as already marked. A 4×4 grid has no single middle square, so it has no free space.`,
+  },
+]);
+---
+
+<Layout
+  title="Classroom Bingo Card Generator — Free | RosterOwl"
+  description="Print a unique bingo card for every student — built from classmate names (zero typing) or your own sight words, vocab, and math facts. Caller's list included, 3×3 to 5×5 grids, one PDF. Free, no signup."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+  <script is:inline type="application/ld+json" set:html={faqLd} slot="head" />
+
+  <main class="tool-page">
+    <div class="page-head">
+      <h1>Classroom bingo card generator</h1>
+      <p>
+        A unique card for every player — built from your students' names or your own word list,
+        caller's list included, all in one PDF. Free · no signup ·
+        <a href="/privacy/">names never leave your browser</a>.
+      </p>
+    </div>
+
+    <BingoApp client:only="svelte" />
+
+    <section class="content">
+      <h2 class="sr-only">Why teachers use it</h2>
+      <div class="feature-grid">
+        <div>
+          <h3>Every card is unique</h3>
+          <p>
+            Each card is its own random shuffle of the item pool, and exact repeats are rejected —
+            so you never get the shared-win chaos of three students shouting bingo on the same
+            square at the same moment.
+          </p>
+        </div>
+        <div>
+          <h3>Names mode: zero typing</h3>
+          <p>
+            The first-week icebreaker, ready in one click: every student gets a card headed with
+            their name and filled with classmates — their own name is left off their grid, so they
+            hunt each other. Also great for roll-call bingo all year.
+          </p>
+        </div>
+        <div>
+          <h3>Your words, any subject</h3>
+          <p>
+            Sight words, vocabulary, math facts, science terms — paste anything, one item per
+            line. Your word list is saved with your class in this browser, so it's waiting for you
+            next time.
+          </p>
+        </div>
+        <div>
+          <h3>Caller's list included</h3>
+          <p>
+            The last page lists every item in a numbered tick-box grid, so you can call, tick,
+            and verify a winning card without keeping score on scrap paper. Cards and caller's
+            list arrive as one PDF.
+          </p>
+        </div>
+      </div>
+
+      <section class="faq">
+        <h2>Questions teachers ask</h2>
+        <details>
+          <summary>How different can the cards really be?</summary>
+          <p>
+            A 4×4 card uses 16 of your items in a random arrangement, so even a modest pool allows
+            an enormous number of possible cards — with 20 items there are thousands of ways to
+            pick the squares before you even count the orderings. The generator also compares
+            every new card against the ones before it and reshuffles exact repeats, so each card
+            in your set is unique. If a grid size needs more items than you have, it's simply
+            unavailable until you add a few more.
+          </p>
+        </details>
+        <details>
+          <summary>Can I reuse my word list?</summary>
+          <p>
+            Yes — it's saved with your class, on your device. Come back next week and the same
+            list is in the box, ready to tweak or print again. Each class keeps its own list.
+          </p>
+        </details>
+        <details>
+          <summary>What goes in the free space?</summary>
+          <p>
+            On 3×3 and 5×5 grids the free-center toggle prints “FREE” in the middle square (with a
+            soft highlight, or plain in ink-saver mode), and it counts as already marked. A 4×4
+            grid has no single middle square, so it has no free space.
+          </p>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Layout>

@@ -1,0 +1,95 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<Layout
+  title="What this site sends — RosterOwl privacy"
+  description="Exactly what RosterOwl sends over the network — and what it never sends: your class list. Student names stay in your browser."
+>
+  <main>
+    <h1>What this site sends</h1>
+    <p class="lede">
+      The short version: <strong>your class list never leaves your browser.</strong> Here is the
+      complete, checkable list of network activity on rosterowl.com.
+    </p>
+
+    <h2>What the site loads</h2>
+    <ul>
+      <li>Its own pages, code, and six font files (three for the screen, three for building your PDFs) — all served from rosterowl.com. No third-party scripts, no CDNs, no trackers, no cookies.</li>
+    </ul>
+
+    <h2>What the site sends</h2>
+    <ul>
+      <li>
+        <strong>Nothing containing your data.</strong> After the page loads, the tools work
+        entirely inside your browser. Student names, rules, absences, job rotations, word lists
+        and charts are processed on your device and stored in your browser's local storage. There is no account system and no
+        database.
+      </li>
+    </ul>
+
+    <h2>How to verify this yourself</h2>
+    <ol>
+      <li>Open your browser's developer tools (F12) and switch to the Network tab.</li>
+      <li>Load the seating chart tool, paste a class list, shuffle, download a PDF.</li>
+      <li>
+        Watch the requests: after the initial page load you'll see no requests carrying your data —
+        try it with your Wi-Fi off; the tool keeps working.
+      </li>
+    </ol>
+
+    <h2>If this ever changes</h2>
+    <p>
+      Today there are no analytics at all. The one thing we may add is Cloudflare's cookieless
+      page-view counter (a script called <code>beacon.min.js</code>) — it counts page loads and Web
+      Vitals, sets no cookies, and cannot see anything you type. If and when it's enabled, this
+      paragraph will say so in the same deploy. Nothing else gets added without appearing here
+      first. This page is the contract.
+    </p>
+
+    <h2>Backups</h2>
+    <p>
+      "Save backup file" downloads your data to your own computer as a plain JSON file you control.
+      Restoring reads that file locally. It is never transmitted anywhere.
+    </p>
+  </main>
+  <SiteFooter />
+</Layout>
+
+<style>
+  main {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: var(--space-5) var(--page-gutter) var(--space-8);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+    letter-spacing: -0.015em;
+  }
+  .lede {
+    font-size: var(--text-lg);
+    color: var(--muted);
+  }
+  .lede strong {
+    color: var(--ink);
+  }
+  h2 {
+    font-size: var(--text-xl);
+    margin-top: var(--space-6);
+  }
+  ul,
+  ol {
+    color: var(--muted);
+    padding-left: 1.3rem;
+  }
+  li {
+    margin: var(--space-2) 0;
+  }
+  li strong {
+    color: var(--ink);
+  }
+  p {
+    color: var(--muted);
+  }
+</style>

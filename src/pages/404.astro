@@ -1,0 +1,60 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import OwlMark from '../components/OwlMark.svelte';
+---
+
+<Layout
+  title="Page not found — RosterOwl"
+  description="That page flew off. Find the RosterOwl classroom tools here."
+  noindex
+>
+  <main>
+    <OwlMark size={72} />
+    <h1>Hoo? That page flew off.</h1>
+    <p>No worries — everything useful is one hop away:</p>
+    <nav aria-label="Popular tools">
+      <a class="btn primary" href="/seating-chart/">Seating chart maker</a>
+      <a class="btn" href="/group-maker/">Group maker</a>
+      <a class="btn" href="/picker/">Student picker</a>
+      <a class="btn" href="/certificates/">Certificates</a>
+      <a class="btn" href="/checklist/">Checklist</a>
+      <a class="btn" href="/name-tags/">Name tags</a>
+      <a class="btn" href="/seating-chart/templates/">Blank templates</a>
+    </nav>
+    <p class="home"><a href="/">← RosterOwl home</a></p>
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  main {
+    max-width: 36rem;
+    margin: 0 auto;
+    padding: var(--space-8) var(--page-gutter) var(--space-6);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+    letter-spacing: -0.015em;
+  }
+  p {
+    color: var(--muted);
+    margin: 0;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+    margin-top: var(--space-2);
+  }
+  .home {
+    margin-top: var(--space-4);
+  }
+</style>
