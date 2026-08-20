@@ -405,8 +405,10 @@ html {
   grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
   gap: var(--space-4);
   min-width: 0;
-  height: min(calc(100dvh - 7rem), 58rem);
-  min-height: 32rem;
+  /* Tall enough that a landscape page renders in full, capped so a very tall
+     window doesn't just add empty PDF-viewer background under it. */
+  height: min(calc(100dvh - 7rem), 54rem);
+  min-height: 34rem;
 }
 
 .print-options {
@@ -495,6 +497,10 @@ html {
 
 .print-preview {
   min-width: 0;
+  /* Fills a wrapper column (the certificate tool puts a caption under the
+     preview). Without this it sat at its 28rem floor while the column around
+     it was twice as tall, cropping the page and leaving dead space below. */
+  flex: 1;
   min-height: 28rem;
   background: var(--surface-2);
   border: 1px solid var(--line);
