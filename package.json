@@ -17,7 +17,7 @@
     "db:migrate:local": "wrangler d1 migrations apply rosterowl --local",
     "db:migrate": "wrangler d1 migrations apply rosterowl --remote",
     "dev:worker": "wrangler dev",
-    "deploy": "PUBLIC_CF_BEACON_TOKEN=bce1320fb02248bcb4de6a317788c00b npm run build && wrangler deploy"
+    "deploy": "PUBLIC_CF_BEACON_TOKEN=bce1320fb02248bcb4de6a317788c00b PUBLIC_GA_ID=G-GVL9E69ZV1 npm run build && wrangler deploy"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

@@ -1,5 +1,6 @@
 // Verifies the actual PDF download event fires with a sane filename (Chromium).
 import { chromium } from 'playwright';
+import { downloadPath } from './download-path.mjs';
 const browser = await chromium.launch({ channel: 'chromium' });
 const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 const errors = [];
@@ -15,7 +16,7 @@ const [download] = await Promise.all([
   page.waitForEvent('download', { timeout: 10000 }),
   page.locator('.dl').click(),
 ]);
-const path = await download.path();
+const path = await downloadPath(download);
 const { readFileSync } = await import('node:fs');
 const head = readFileSync(path).subarray(0, 5).toString();
 console.log(JSON.stringify({ filename: download.suggestedFilename(), pdfMagic: head, errors }, null, 2));

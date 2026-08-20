@@ -25,6 +25,12 @@ const cardAlt = title.replace(/\s*[|—–-]\s*RosterOwl\s*$/, '');
 // Absent from local and preview builds so development is never counted — set
 // PUBLIC_CF_BEACON_TOKEN for production, where /privacy/ says it is running.
 const beaconToken = import.meta.env.PUBLIC_CF_BEACON_TOKEN;
+// Google Analytics 4, for funnels Cloudflare's cookieless counter cannot show
+// (how many people who open a tool actually download a PDF). Unlike the beacon
+// it sets cookies, so it is gated behind consent and loads only on acceptance —
+// see the consent bar near the end of <body>. Same deploy-only wiring as the
+// beacon: local builds and CI never carry it.
+const gaId = import.meta.env.PUBLIC_GA_ID;
 const isHome = pathname === '/';
 const activeTool = activeToolHref(pathname);
 // The flagship leads the panel on its own; the rest fill the two columns below.
@@ -44,6 +50,7 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#faf7f0" />
     <meta name="apple-mobile-web-app-title" content="RosterOwl" />
+    <meta name="application-name" content="RosterOwl" />
     {noindex ? (
       <meta name="robots" content="noindex, follow" />
     ) : (
@@ -212,7 +219,7 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
             href="/privacy/"
             aria-current={pathname.startsWith('/privacy') ? 'page' : undefined}
           >
-            Privacy
+            Privacy Policy
           </a>
         </nav>
 
@@ -342,6 +349,75 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
       })();
     </script>
 
+    {
+      gaId && (
+        <div class="consent" hidden data-consent role="dialog" aria-live="polite" aria-label="Analytics choice">
+          <p>
+            Can we count how the tools get used? It helps decide what to build next. Your class
+            list is never part of it. <a href="/privacy/#analytics">What this collects</a>.
+          </p>
+          <div class="consent-actions">
+            <button class="btn small primary" type="button" data-consent-accept>Allow</button>
+            <button class="btn small" type="button" data-consent-decline>No thanks</button>
+          </div>
+        </div>
+      )
+    }
+    {
+      gaId && (
+        <script is:inline define:vars={{ gaId }}>
+      // Consent gate for Google Analytics.
+      //
+      // Nothing about GA exists on the page until the teacher says yes: no
+      // script, no cookie, no request to Google. That is a deliberate step
+      // beyond Consent Mode, which still loads gtag.js and pings Google with
+      // consent denied — on a site whose whole claim is that it does not do
+      // things behind your back, "we asked first and then did it anyway" would
+      // be the wrong shape.
+      (() => {
+        const KEY = 'rosterowl:consent:v1';
+        const bar = document.querySelector('[data-consent]');
+        let choice = null;
+        try { choice = localStorage.getItem(KEY); } catch {}
+
+        function load() {
+          if (window.__roGaLoaded) return;
+          window.__roGaLoaded = true;
+          const s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+          document.head.appendChild(s);
+          window.dataLayer = window.dataLayer || [];
+          function gtag() { window.dataLayer.push(arguments); }
+          window.gtag = gtag;
+          gtag('js', new Date());
+          // IP anonymisation is on by default in GA4; ads signals are not, and
+          // this site has no advertising to feed.
+          gtag('config', gaId, { allow_google_signals: false, allow_ad_personalization_signals: false });
+        }
+
+        function decide(value) {
+          try { localStorage.setItem(KEY, value); } catch {}
+          if (bar) bar.hidden = true;
+          if (value === 'granted') load();
+        }
+
+        if (choice === 'granted') load();
+        else if (choice !== 'denied' && bar) bar.hidden = false;
+
+        bar?.querySelector('[data-consent-accept]')?.addEventListener('click', () => decide('granted'));
+        bar?.querySelector('[data-consent-decline]')?.addEventListener('click', () => decide('denied'));
+
+        // Let /privacy offer a way back to this choice without a second UI.
+        window.rosterowlResetAnalyticsChoice = () => {
+          try { localStorage.removeItem(KEY); } catch {}
+          location.reload();
+        };
+      })();
+        </script>
+      )
+    }
+
     <script is:inline>
       // Service worker: makes the whole suite work with no connection, which is
       // the state of a great many school networks and every school corridor.
@@ -404,6 +480,37 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
 </html>
 
 <style>
+  /* The analytics consent bar. Bottom-left so it never covers the canvas view
+     controls (bottom-right) or a toast (bottom-centre), and deliberately not a
+     modal: a teacher who ignores it can still use every tool on the site. */
+  .consent {
+    position: fixed;
+    left: var(--space-4);
+    bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    z-index: 90;
+    width: min(26rem, calc(100vw - 2 * var(--space-4)));
+    padding: var(--space-4);
+    border: var(--rule-strong);
+    border-radius: var(--radius-m);
+    background: var(--surface);
+    box-shadow: var(--shadow-2);
+  }
+
+  .consent[hidden] {
+    display: none;
+  }
+
+  .consent p {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--muted);
+  }
+
+  .consent-actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+
   .site-shell {
     position: sticky;
     top: 0;

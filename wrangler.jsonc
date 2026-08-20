@@ -34,7 +34,7 @@
   "vars": {
     // Public, not a secret. Set GOOGLE_CLIENT_SECRET with:
     //   npx wrangler secret put GOOGLE_CLIENT_SECRET
-    "GOOGLE_CLIENT_ID": "201770014508-2u4nfghapfgcvrrk52a5vh9v5d7vn6gu.apps.googleusercontent.com",
+    "GOOGLE_CLIENT_ID": "525751119531-na9qpjc3hnjek5bminp63vcoh0r323th.apps.googleusercontent.com",
     "APP_ORIGIN": "https://rosterowl.com"
   },
 

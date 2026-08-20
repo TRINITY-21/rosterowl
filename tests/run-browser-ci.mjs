@@ -2,6 +2,29 @@ import { spawn } from 'node:child_process';
 
 const port = 4331;
 const base = `http://127.0.0.1:${port}`;
+
+// Every browser test gets a wall-clock budget.
+//
+// Individual Playwright calls mostly carry their own timeouts, but not all of
+// them do — browser.newContext() and browser.newPage() have no timeout option
+// at all, and when the machine is loaded enough that Chromium never answers the
+// command that creates the page, they wait forever. That is not hypothetical:
+// it is what turned a five-second smoke test into a thirty-nine-minute stall
+// with no output, and then did it again to smoke-groups.mjs, which had a
+// timeout on every call it makes and hung on line 10 regardless.
+//
+// So the bound lives here rather than at the call sites. A per-script budget
+// covers every wait a test can perform, including the ones Playwright gives us
+// no way to bound and the ones nobody has written yet.
+const DEFAULT_BUDGET_MS = 180_000;
+
+/** Scripts that legitimately need longer than the default. */
+const BUDGETS = {
+  // Builds the same PDF twice — once online, once with the network cut — and
+  // waits out the precache in between.
+  'tests/smoke-offline.mjs': 300_000,
+};
+
 const preview = spawn('npm', ['run', 'preview', '--', '--host', '127.0.0.1', '--port', String(port)], {
   stdio: ['ignore', 'pipe', 'pipe'],
   env: process.env,
@@ -24,15 +47,50 @@ async function waitForServer() {
 }
 
 async function run(script) {
+  const budget = BUDGETS[script] ?? DEFAULT_BUDGET_MS;
+  const started = Date.now();
   const child = spawn(process.execPath, [script], {
     stdio: 'inherit',
     env: { ...process.env, BASE_URL: base },
+    // Its own process group, so killing it takes the browsers it spawned with
+    // it. Without this the runner moves on and the orphaned Chromiums stay
+    // behind to slow down — or hang — everything after them.
+    detached: true,
   });
+
+  let timedOut = false;
+  const watchdog = setTimeout(() => {
+    timedOut = true;
+    try {
+      process.kill(-child.pid, 'SIGTERM');
+    } catch {}
+    // SIGTERM first so Playwright gets a chance to close cleanly; SIGKILL if it
+    // does not, because a wedged browser will not answer either.
+    setTimeout(() => {
+      try {
+        process.kill(-child.pid, 'SIGKILL');
+      } catch {}
+    }, 5000);
+  }, budget);
+
   const exitCode = await new Promise((resolve) => child.once('exit', resolve));
+  clearTimeout(watchdog);
+
+  const seconds = ((Date.now() - started) / 1000).toFixed(1);
+  if (timedOut) {
+    process.exitCode = 1;
+    throw new Error(
+      `${script} exceeded its ${budget / 1000}s budget and was killed. ` +
+        'It did not fail an assertion — it stopped making progress, most likely ' +
+        'waiting on a Playwright call with no timeout of its own ' +
+        '(browser.newContext and browser.newPage have none).',
+    );
+  }
   if (exitCode !== 0) {
     process.exitCode = exitCode ?? 1;
-    throw new Error(`${script} failed with ${exitCode}`);
+    throw new Error(`${script} failed with ${exitCode} after ${seconds}s`);
   }
+  console.log(`✓ ${script} (${seconds}s)`);
 }
 
 try {

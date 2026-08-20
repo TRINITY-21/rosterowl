@@ -96,7 +96,23 @@ export default defineConfig({
         // Unknown routes while offline land on the 404 page, which lists every
         // tool — a better dead end than the browser's dinosaur.
         navigateFallback: '/404.html',
-        navigateFallbackDenylist: [/^\/_astro\//],
+        // /api/* MUST be denied, not merely uncached. navigateFallback makes the
+        // service worker answer *every* navigation it has no route for with the
+        // 404 page — and signing in is a navigation (location.href to
+        // /api/auth/google/start, then Google navigating back to the callback).
+        // Without this the worker swallows both hops and the teacher lands on
+        // "That page flew off" having never reached the network. It is invisible
+        // to curl, which does not run service workers.
+        // Three exclusions, and the third is the general case the first two are
+        // instances of: navigateFallback answers *every* navigation the worker
+        // has no route for with the 404 page, so anything that is not a page
+        // has to be excluded explicitly or it silently becomes "That page flew
+        // off". /api/ broke Google sign-in that way; the extension rule catches
+        // sitemap-index.xml, robots.txt and every file added later, without
+        // anyone having to remember this rule exists.
+        //
+        // Real pages are directory routes ending in "/", so they never match.
+        navigateFallbackDenylist: [/^\/_astro\//, /^\/api\//, /\/[^/?]+\.[a-z0-9]+$/i],
         cleanupOutdatedCaches: true,
       },
     }),

@@ -12,13 +12,14 @@ import TextPage from '../layouts/TextPage.astro';
   <ul>
     <li>
       Its own pages, code, icons and six font files (three for the screen, three for building your
-      PDFs) — all served from rosterowl.com. No CDNs, no cookies, and no third-party code except the
-      page counter described below.
+      PDFs) — all served from rosterowl.com. No CDNs, and no third-party code beyond the two
+      measurement tools described below.
     </li>
     <li>
       <strong>Cloudflare Web Analytics</strong> (a script called <code>beacon.min.js</code>), which
       counts page loads and page-speed measurements. It sets no cookies, does not follow you between
-      sites, and cannot see anything you type. It is the only third-party request on the site.
+      sites, and cannot see anything you type. It needs no permission because it collects nothing
+      that identifies you.
     </li>
   </ul>
 
@@ -63,9 +64,9 @@ import TextPage from '../layouts/TextPage.astro';
       password.
     </li>
     <li>
-      <strong>One cookie appears.</strong> A sign-in cookie that JavaScript cannot read, used only
-      to recognise your browser on the next visit. There is still no advertising or tracking cookie
-      of any kind.
+      <strong>A sign-in cookie appears.</strong> One cookie that JavaScript cannot read, used only
+      to recognise your browser on the next visit. It is not an advertising cookie and is not
+      shared with anyone.
     </li>
     <li>
       <strong>You can undo it.</strong> "Delete cloud copy" in the sync menu erases the stored
@@ -73,6 +74,90 @@ import TextPage from '../layouts/TextPage.astro';
       front of you are untouched — sync is a copy, never the original.
     </li>
   </ul>
+
+  <h2 id="analytics">Google Analytics — only if you say yes</h2>
+  <p>
+    Cloudflare's counter tells us how many people opened a page. It cannot tell us whether they got
+    what they came for — whether someone who opened the seating chart actually finished a chart and
+    printed it. That is the question that decides what gets built next, so this site also offers
+    Google Analytics. It is the one thing here that sets tracking cookies, so it is the one thing
+    here that asks first.
+  </p>
+  <ul>
+    <li>
+      <strong>Nothing loads until you accept.</strong> Not the script, not a cookie, not a single
+      request to Google. This is stricter than the usual "consent mode" arrangement, which loads
+      Google's tag immediately and merely tells it you said no. If you decline, or ignore the bar,
+      your browser never contacts Google at all — you can confirm that in the Network tab.
+    </li>
+    <li>
+      <strong>What it collects if you accept.</strong> Pages viewed, how you arrived, rough
+      location by country, device and browser type, and which tools get used. Two cookies
+      (<code>_ga</code> and <code>_ga_…</code>) let it recognise a repeat visit.
+    </li>
+    <li>
+      <strong>What it never collects.</strong> Your class list. Student names, rosters, rules,
+      absences and charts live in the part of the site that never talks to Google, and no event
+      this site sends carries any of them. Ad personalisation and Google Signals are both switched
+      off in the configuration.
+    </li>
+    <li>
+      <strong>Changing your mind.</strong> Either answer is remembered on this device, and you can
+      switch at any time:
+      <button class="linkish" type="button" data-reset-analytics>ask me again</button>.
+    </li>
+  </ul>
+
+  <h2 id="google-user-data">What we do with your Google account data</h2>
+  <p>
+    This section is the disclosure Google requires of any app that offers Google
+    Sign-In, and it applies only if you choose to sign in.
+  </p>
+  <ul>
+    <li>
+      <strong>What we request.</strong> Two things, and nothing else: the <code>openid</code>
+      scope, which gives us a stable identifier for your account, and the <code>email</code>
+      scope, which gives us your email address. We do not request access to Drive, Gmail,
+      Calendar, Contacts, Classroom, your profile photo, or anything else — and because we never
+      request them, we could not read them even if we wanted to.
+    </li>
+    <li>
+      <strong>How we use it.</strong> Solely to recognise that the person signing in on your home
+      computer is the same person who signed in at school, so we can hand you back your own class
+      list. Your email address is used to show you which account you are signed in as. It is not
+      used for marketing, and RosterOwl sends no email.
+    </li>
+    <li>
+      <strong>How we store it.</strong> The account identifier and email address are stored in our
+      database alongside your synced document. The sign-in session itself is stored only as a
+      one-way hash, so even a copy of our database would not let anyone sign in as you.
+    </li>
+    <li>
+      <strong>Who we share it with.</strong> Nobody. Google account data is never sold,
+      never shared with third parties, never used for advertising, and never transferred except as
+      required to operate the sync feature you asked for. RosterOwl has no advertisers, no data
+      partners and no analytics tied to your identity.
+    </li>
+    <li>
+      <strong>How to delete it.</strong> "Delete cloud copy" in the sync menu removes your stored
+      class list immediately. To remove your account record and email address as well,
+      <a href="/contact/">ask us</a> and we will delete it. You can also revoke RosterOwl's access
+      entirely from your
+      <a href="https://myaccount.google.com/permissions" rel="noopener">Google account
+      permissions page</a>, which severs the connection from Google's side.
+    </li>
+    <li>
+      <strong>How long we keep it.</strong> For as long as you keep using sync. Sign-in sessions
+      expire on their own, and a deleted cloud copy is gone at once rather than retained in a
+      backup that outlives your request.
+    </li>
+  </ul>
+  <p>
+    RosterOwl's use of information received from Google APIs adheres to the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener"
+      >Google API Services User Data Policy</a
+    >, including the Limited Use requirements.
+  </p>
 
   <h2>The browser enforces the boundary, not just us</h2>
   <p>
@@ -97,6 +182,10 @@ import TextPage from '../layouts/TextPage.astro';
     <li>
       Signed in, you will additionally see requests to <code>/api/doc</code> on rosterowl.com. That
       is your class list going to and from your own account, and it is the only thing sync sends.
+    </li>
+    <li>
+      If you accepted analytics you will also see <code>googletagmanager.com</code> and
+      <code>google-analytics.com</code>. Decline instead, and those two never appear.
     </li>
   </ol>
 
@@ -124,3 +213,15 @@ import TextPage from '../layouts/TextPage.astro';
     happy to complete a vendor questionnaire — <a href="/contact/">just ask</a>.
   </p>
 </TextPage>
+
+<script is:inline>
+  // Lets the page hand the analytics choice back to the teacher. The gate that
+  // owns the decision lives in Layout.astro and exposes this hook; the button
+  // stays inert on a build with no analytics configured, which is every local
+  // and CI build.
+  document.querySelector('[data-reset-analytics]')?.addEventListener('click', () => {
+    if (typeof window.rosterowlResetAnalyticsChoice === 'function') {
+      window.rosterowlResetAnalyticsChoice();
+    }
+  });
+</script>

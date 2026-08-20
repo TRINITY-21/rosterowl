@@ -12,6 +12,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
+import { downloadPath } from './download-path.mjs';
 
 const base = process.env.BASE_URL ?? 'http://localhost:4321';
 
@@ -42,7 +43,7 @@ async function downloadChart(page) {
     page.waitForEvent('download', { timeout: 30000 }),
     button.click(),
   ]);
-  return new Uint8Array(readFileSync(await download.path()));
+  return new Uint8Array(readFileSync(await downloadPath(download)));
 }
 
 const browser = await chromium.launch({ channel: 'chromium' });
@@ -99,6 +100,38 @@ await page.goto(`${base}/no-such-page/`, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('main', { timeout: 20000 });
 
 await context.setOffline(false);
+// --- the service worker must not swallow /api/* navigations -----------------
+//
+// navigateFallback answers every navigation the worker has no route for with
+// the 404 page. Signing in is a navigation (location.href to
+// /api/auth/google/start, and Google navigating back to the callback), so a
+// missing denylist entry silently replaces the whole OAuth flow with
+// "Hoo? That page flew off." Nothing that skips service workers — curl, a
+// plain fetch, every other smoke test — can see it.
+//
+// The assertion is deliberately about the *worker*, not the API: this suite
+// runs against `astro preview`, which serves only static files and has no
+// /api/, so a real 404 from the server is the correct outcome here. What must
+// never happen is a 200 carrying the precached 404 page, which is what the
+// worker returns when it has hijacked the navigation.
+{
+  // /api/ is the one that broke sign-in; the file paths are the general case —
+  // a sitemap or robots.txt swallowed by the worker is invisible until someone
+  // opens it and sees the 404 page.
+  for (const path of ['/api/me', '/sitemap-index.xml', '/robots.txt']) {
+    const probe = await context.newPage();
+    const response = await probe.goto(base + path, { waitUntil: 'domcontentloaded' });
+    const status = response?.status() ?? 0;
+    const body = await probe.evaluate(() => document.body.innerText);
+    assert.ok(
+      !(status === 200 && /page flew off/i.test(body)),
+      `the service worker answered ${path} with the cached 404 page (status ${status}) — ` +
+        'check navigateFallbackDenylist in astro.config.mjs',
+    );
+    await probe.close();
+  }
+}
+
 await browser.close();
 
 console.log(`smoke-offline: rebuilt an identical ${offline.byteLength}-byte PDF with the network off`);

@@ -19,6 +19,19 @@ import { join } from 'node:path';
 const BEACON_SCRIPT = 'https://static.cloudflareinsights.com';
 const BEACON_CONNECT = 'https://cloudflareinsights.com';
 
+// Google Analytics 4. Listed unconditionally rather than only when PUBLIC_GA_ID
+// is set, so the policy a local build and tests/smoke-csp.mjs exercise is byte
+// for byte the policy production serves — a CSP that differs between the build
+// you test and the build you ship is not a CSP you have tested.
+//
+// Allowing the origin is not the same as contacting it: gtag.js is injected
+// only after the teacher accepts analytics (see the consent gate in
+// Layout.astro). Until then nothing here is ever requested.
+const GA_SCRIPT = 'https://www.googletagmanager.com';
+const GA_CONNECT = 'https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com';
+// GA still falls back to an image ping on browsers that block fetch/beacon.
+const GA_IMG = 'https://www.google-analytics.com';
+
 function htmlFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = join(dir, e.name);
@@ -75,19 +88,19 @@ export function cspHeaders() {
           `base-uri 'none'`,
           `form-action 'none'`,
           `frame-ancestors 'none'`,
-          `script-src 'self' ${BEACON_SCRIPT} ${[...scripts].join(' ')}`,
+          `script-src 'self' ${BEACON_SCRIPT} ${GA_SCRIPT} ${[...scripts].join(' ')}`,
           `style-src 'self' ${[...styles].join(' ')}`,
           // Svelte transitions animate via the element's style attribute.
           `style-src-attr 'unsafe-inline'`,
           `font-src 'self'`,
           // blob: is the generated PDF and its PNG render; data: is canvas output.
-          `img-src 'self' data: blob:`,
+          `img-src 'self' data: blob: ${GA_IMG}`,
           `object-src 'self' blob:`,
           // The PDF preview embeds a blob: URL; some engines treat it as a frame.
           `frame-src 'self' blob:`,
           // The pdf.js render worker and the service worker.
           `worker-src 'self' blob:`,
-          `connect-src 'self' ${BEACON_CONNECT}`,
+          `connect-src 'self' ${BEACON_CONNECT} ${GA_CONNECT}`,
           `manifest-src 'self'`,
         ].join('; ');
 

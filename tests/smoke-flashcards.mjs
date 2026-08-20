@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { downloadPath } from './download-path.mjs';
 
 const out = '/tmp/rosterowl-flashcards';
 const base = process.env.BASE_URL ?? 'http://localhost:4321';
@@ -41,7 +42,7 @@ const [download] = await Promise.all([
   page.getByRole('button', { name: /download 22 cards/i }).click(),
 ]);
 const { readFileSync } = await import('node:fs');
-const buf = readFileSync(await download.path());
+const buf = readFileSync(await downloadPath(download));
 const { PDFDocument } = await import('pdf-lib');
 const doc = await PDFDocument.load(new Uint8Array(buf));
 assert.equal(buf.subarray(0, 5).toString(), '%PDF-', 'downloaded flashcards should be a PDF');

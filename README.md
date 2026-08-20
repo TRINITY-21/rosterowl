@@ -104,6 +104,11 @@ npm run deploy                        # astro build + wrangler deploy
    token is a public site token — it ships in the HTML of every page — so it
    lives in `package.json` rather than in a secret. `/privacy` describes the
    beacon as running, so it must stay set for production.
+4. Google Analytics: `PUBLIC_GA_ID` is set the same way, and the tag is gated
+   behind consent — `Layout.astro` injects gtag.js only after the visitor
+   accepts, so declining means zero requests to Google rather than the usual
+   consent-mode arrangement where the tag loads anyway. Builds without the id
+   emit no consent bar at all.
 
 ## Google Sign-In setup
 

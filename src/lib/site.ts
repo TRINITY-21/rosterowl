@@ -14,7 +14,7 @@ export interface SitePage {
 /** Shown in the footer's last column and in the header's Tools panel foot. */
 export const SITE_PAGES: SitePage[] = [
   { href: '/about/', label: 'About' },
-  { href: '/privacy/', label: 'Privacy' },
+  { href: '/privacy/', label: 'Privacy Policy' },
   { href: '/contact/', label: 'Contact' },
   { href: '/terms/', label: 'Terms' },
 ];
