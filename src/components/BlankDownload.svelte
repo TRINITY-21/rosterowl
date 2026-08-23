@@ -2,7 +2,7 @@
   // Builds one blank printable in the browser and hands it to the download
   // shelf. Same shape as TemplateDownload, but driven by the BLANKS catalogue
   // so the gallery stays a data list rather than a pile of components.
-  import { BLANKS } from '../lib/blanks';
+  import { ALL_BLANKS } from '../lib/blanks';
   import { safeFilename } from '../lib/filenames';
   import ShareActions from './ShareActions.svelte';
 
@@ -10,7 +10,7 @@
 
   let error = $state('');
 
-  const spec = $derived(BLANKS.find((b) => b.key === blankKey));
+  const spec = $derived(ALL_BLANKS.find((b) => b.key === blankKey));
   const filename = $derived(`${safeFilename(spec?.filename ?? '', 'Blank printable')}.pdf`);
 
   async function buildPdf(): Promise<Uint8Array> {

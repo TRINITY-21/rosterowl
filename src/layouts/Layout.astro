@@ -100,6 +100,15 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
           document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#141d1a');
         }
       } catch {}
+      // Reveal the local-data strip before first paint so the sticky header
+      // does not jump. Signed-in teachers and anyone who dismissed it stay
+      // without the extra row.
+      try {
+        const signedIn = /(^|;\s*)ro_signed_in=1(;|$)/.test(document.cookie);
+        if (!signedIn && localStorage.getItem('rosterowl:local-warning-dismissed') !== '1') {
+          document.documentElement.dataset.localWarn = '';
+        }
+      } catch {}
     </script>
     {
       beaconToken && (
@@ -124,6 +133,32 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
       </button>
     </div>
     <header class="site-shell">
+      <div class="local-warn" data-local-warn-bar role="status">
+        <div class="local-warn__inner">
+          <span class="warn-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <circle cx="8" cy="8" r="8" fill="currentColor" />
+              <path
+                d="M8 4.15v5.1"
+                fill="none"
+                stroke="#fff"
+                stroke-width="1.85"
+                stroke-linecap="round"
+              />
+              <circle cx="8" cy="11.55" r="1.05" fill="#fff" />
+            </svg>
+          </span>
+          <p>
+            Until you sign in, everything stays in this browser — you may lose it.
+            <a class="warn-action" href="/api/auth/google/start" data-warn-signin>Sign in to keep it.</a>
+          </p>
+          <button class="warn-dismiss" type="button" data-warn-dismiss aria-label="Dismiss this notice">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
       <div class="site-shell__inner">
         <a
           class="site-brand"
@@ -229,6 +264,15 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
             <span class="chip-text" data-class-name></span>
             <span class="chip-count" data-class-count></span>
           </a>
+          <a class="signin" href="/api/auth/google/start" data-signin>
+            <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+              <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/>
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+            </svg>
+            <span>Sign in</span>
+          </a>
           <button
             class="theme-toggle"
             type="button"
@@ -284,6 +328,50 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
         } catch {}
         // Switching or renaming a class in a tool re-renders the chip in place.
         window.addEventListener('rosterowl-class-change', (e) => render(e.detail));
+      })();
+    </script>
+    <script is:inline>
+      // The header's sign-in link. Rendered as a plain anchor so it works with
+      // no JavaScript and costs no Svelte island on the static pages; this only
+      // sharpens it.
+      //
+      // Two adjustments. First, come back to the page the teacher was reading
+      // rather than the Worker's default landing spot — the Worker validates
+      // `next` as a same-origin path, so an open redirect is not on the table.
+      // Second, stand down once they are signed in: ro_signed_in is a
+      // non-HttpOnly hint cookie set beside the real session, so the header can
+      // read it without an API call on every page. The sync menu inside the
+      // tools owns the signed-in state — account, last sync, sign out — and two
+      // controls disagreeing about it would be worse than one.
+      (() => {
+        const signedIn = /(^|;\s*)ro_signed_in=1(;|$)/.test(document.cookie);
+        const next = '/api/auth/google/start?next=' + encodeURIComponent(location.pathname + location.search);
+
+        const link = document.querySelector('[data-signin]');
+        if (link) {
+          if (signedIn) link.hidden = true;
+          else link.href = next;
+        }
+
+        // The "this is only in your browser" strip. Visibility is decided in
+        // the head script (data-local-warn on <html>) so the sticky header
+        // does not jump. This pass only points Sign-in back here and wires
+        // dismiss. Signed-in teachers never see it — the hint cookie stands
+        // the strip down on the next load.
+        const warn = document.querySelector('[data-local-warn-bar]');
+        if (!warn) return;
+        if (signedIn) {
+          delete document.documentElement.dataset.localWarn;
+          return;
+        }
+        const signin = warn.querySelector('[data-warn-signin]');
+        if (signin) signin.href = next;
+        warn.querySelector('[data-warn-dismiss]')?.addEventListener('click', () => {
+          delete document.documentElement.dataset.localWarn;
+          try {
+            localStorage.setItem('rosterowl:local-warning-dismissed', '1');
+          } catch {}
+        });
       })();
     </script>
     <div id="main-content" tabindex="-1">
@@ -859,6 +947,122 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     color: var(--muted);
   }
 
+  /* Hidden until <html data-local-warn> is set in the head script — signed-in
+     teachers and anyone who dismissed it never see the extra row, and there
+     is no late unhide that shoves the nav down. */
+  .local-warn {
+    display: none;
+    background: var(--accent-soft);
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+
+  :global(html[data-local-warn]) .local-warn {
+    display: block;
+  }
+
+  .local-warn__inner {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: min(100%, var(--content-wide));
+    margin: 0 auto;
+    padding: 0.42rem var(--page-gutter);
+  }
+
+  .warn-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    color: var(--danger);
+  }
+
+  .warn-icon svg {
+    display: block;
+  }
+
+  .local-warn p {
+    flex: 1;
+    margin: 0;
+    min-width: 0;
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    color: var(--ink);
+  }
+
+  .warn-action {
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+    text-decoration-thickness: 1.5px;
+    white-space: nowrap;
+  }
+
+  .warn-action:hover {
+    color: var(--brand-strong);
+  }
+
+  .warn-dismiss {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-right: -0.25rem;
+    border: 0;
+    border-radius: var(--radius-s);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .warn-dismiss:hover {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--ink);
+  }
+
+  @media (max-width: 620px) {
+    .local-warn__inner {
+      align-items: flex-start;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    .warn-icon {
+      margin-top: 0.12rem;
+    }
+    .local-warn p {
+      font-size: var(--text-xs);
+    }
+  }
+
+  .signin {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    height: 2.25rem;
+    padding: 0 0.85rem 0 0.65rem;
+    border: var(--rule);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+  }
+
+  .signin:hover {
+    border-color: color-mix(in srgb, var(--brand) 40%, var(--line));
+    box-shadow: var(--shadow-1);
+  }
+
+  .signin[hidden] {
+    display: none;
+  }
+
   .theme-toggle {
     display: inline-flex;
     align-items: center;
@@ -916,11 +1120,11 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     /* The panel becomes a sheet anchored under the header, not a popover. */
     .tools-panel {
       position: fixed;
-      top: calc(4rem + env(safe-area-inset-top));
+      top: calc(4rem + var(--local-warn-h) + env(safe-area-inset-top));
       left: 0;
       right: 0;
       width: auto;
-      max-height: calc(100dvh - 4rem - env(safe-area-inset-top));
+      max-height: calc(100dvh - 4rem - var(--local-warn-h) - env(safe-area-inset-top));
       overflow-y: auto;
       padding: var(--space-4) var(--page-gutter) calc(var(--space-5) + env(safe-area-inset-bottom));
       border-inline: none;
@@ -944,11 +1148,6 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
   }
 
   @media (max-width: 620px) {
-    .theme-toggle {
-      width: var(--touch-target);
-      height: var(--touch-target);
-    }
-
     .class-chip {
       display: none;
     }
@@ -958,9 +1157,36 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     }
   }
 
-  @media (max-width: 380px) {
+  @media (max-width: 420px) {
     .site-brand span {
       font-size: 1.15rem;
+    }
+    /* The labeled pill needs ~8px more than the default header gaps on a
+       390px phone. Tighten first; only drop the label below 380px. */
+    .site-shell__inner {
+      gap: var(--space-2);
+    }
+    .site-actions {
+      gap: var(--space-1);
+    }
+  }
+
+  @media (max-width: 380px) {
+    /* 320px is the smoke-test floor. The labeled Sign-in pill does not fit
+       beside the wordmark here, so the label drops and the control stays as
+       the Google mark — still the thing a teacher on a phone needs to find.
+       tests/smoke.mjs asserts the page does not overflow at this width. */
+    .signin span {
+      display: none;
+    }
+    .signin {
+      width: 2.25rem;
+      padding: 0;
+      justify-content: center;
+    }
+    .theme-toggle {
+      width: 2.25rem;
+      height: 2.25rem;
     }
   }
 

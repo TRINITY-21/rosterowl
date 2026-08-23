@@ -38,9 +38,23 @@ html {
   -webkit-text-size-adjust: 100%;
   color-scheme: light;
   scroll-behavior: smooth;
+  /* Extra strip above the 4rem nav when the signed-out local-data notice is up.
+     Layout.astro sets data-local-warn before paint so this is known on first
+     layout, not after a late unhide. */
+  --local-warn-h: 0px;
   /* Clear the sticky header, or every #anchor and the skip link land under it. */
-  scroll-padding-top: calc(4rem + env(safe-area-inset-top) + var(--space-3));
+  scroll-padding-top: calc(4rem + var(--local-warn-h) + env(safe-area-inset-top) + var(--space-3));
   scrollbar-gutter: stable;
+}
+
+html[data-local-warn] {
+  --local-warn-h: 2.25rem;
+}
+
+@media (max-width: 620px) {
+  html[data-local-warn] {
+    --local-warn-h: 4rem;
+  }
 }
 
 /* Light paper is the default look everywhere; the dark chalkboard theme is an

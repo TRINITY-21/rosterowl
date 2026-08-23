@@ -5,38 +5,115 @@ import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MoreTools from '../../../components/MoreTools.astro';
 import BlankDownload from '../../../components/BlankDownload.svelte';
+import { ATTENDANCE_BLANKS } from '../../../lib/blanks';
 import { toolJsonLd, type FaqEntry } from '../../../lib/seo';
 
 const jsonLd = toolJsonLd({
   name: 'RosterOwl Blank Attendance Roster',
   path: '/attendance/blank-attendance-roster/',
   description:
-    'Free blank attendance roster to print and fill in by hand: 25 numbered rows and a full month of Mon–Fri columns on one page. No signup, no watermark.',
+    'Free blank attendance rosters to print and fill in by hand — 15, 25 or 35 numbered rows, portrait or landscape, Letter or A4, plus an ink-saving version. One page each. No signup, no watermark.',
 });
+
+// Build-time line drawings, same recipe as the printables gallery: real
+// proportions, no client JS, and they follow the theme through the site's own
+// custom properties. Each preview is drawn from the variant's actual shape, so
+// the picture cannot claim a row count the PDF does not have.
+const S = { line: 'var(--line-strong)', faint: 'var(--line)', fill: 'var(--surface)', band: 'var(--surface-2)' };
+
+interface Shape {
+  /** Page proportions, in the same units as the PDF. */
+  w: number;
+  h: number;
+  rows: number;
+  /** The shaded day-header band, which the ink-saving variant drops. */
+  band: boolean;
+}
+
+const SHAPES: Record<string, Shape> = {
+  attendance: { w: 230, h: 178, rows: 25, band: true },
+  'attendance-35': { w: 230, h: 178, rows: 35, band: true },
+  'attendance-15': { w: 230, h: 178, rows: 15, band: true },
+  'attendance-portrait': { w: 150, h: 194, rows: 25, band: true },
+  'attendance-a4': { w: 236, h: 167, rows: 25, band: true },
+  'attendance-ink-saver': { w: 230, h: 178, rows: 25, band: false },
+};
+
+/** One sheet: title rule, name column, day columns, N ruled rows. */
+function preview({ w, h, rows, band }: Shape): string {
+  const pad = 13;
+  const top = Math.round(h * 0.21);
+  const gridW = w - pad * 2;
+  const gridH = h - top - pad;
+  const nameW = Math.round(gridW * 0.27);
+  const days = 22;
+  const colGap = (gridW - nameW) / days;
+  const rowGap = gridH / (rows + 1);
+  const headH = Math.min(rowGap * 1.6, gridH * 0.14);
+
+  const parts = [
+    `<rect x="0.5" y="0.5" width="${w - 1}" height="${h - 1}" rx="3" fill="${S.fill}" stroke="${S.line}"/>`,
+    // Title and month, as two weighted rules.
+    `<line x1="${pad}" y1="${Math.round(top * 0.42)}" x2="${pad + Math.round(gridW * 0.42)}" y2="${Math.round(top * 0.42)}" stroke="${S.line}" stroke-width="3"/>`,
+    `<line x1="${pad}" y1="${Math.round(top * 0.68)}" x2="${pad + Math.round(gridW * 0.24)}" y2="${Math.round(top * 0.68)}" stroke="${S.faint}" stroke-width="2"/>`,
+  ];
+  if (band) {
+    parts.push(
+      `<rect x="${pad}" y="${top}" width="${gridW}" height="${headH.toFixed(1)}" fill="${S.band}" stroke="none"/>`
+    );
+  }
+  parts.push(`<rect x="${pad}" y="${top}" width="${gridW}" height="${gridH}" fill="none" stroke="${S.line}"/>`);
+  parts.push(
+    `<line x1="${pad}" y1="${(top + headH).toFixed(1)}" x2="${pad + gridW}" y2="${(top + headH).toFixed(1)}" stroke="${S.line}"/>`
+  );
+  // The name column, then the day columns.
+  parts.push(
+    `<line x1="${pad + nameW}" y1="${top}" x2="${pad + nameW}" y2="${top + gridH}" stroke="${S.line}"/>`
+  );
+  for (let i = 1; i < days; i++) {
+    const x = (pad + nameW + i * colGap).toFixed(1);
+    parts.push(`<line x1="${x}" y1="${top}" x2="${x}" y2="${top + gridH}" stroke="${S.faint}" stroke-width="0.5"/>`);
+  }
+  // Ruled rows below the header band.
+  const first = top + headH;
+  const bodyGap = (gridH - headH) / rows;
+  for (let i = 1; i < rows; i++) {
+    const y = (first + i * bodyGap).toFixed(1);
+    parts.push(`<line x1="${pad}" y1="${y}" x2="${pad + gridW}" y2="${y}" stroke="${S.faint}" stroke-width="0.5"/>`);
+  }
+  void rowGap;
+  return `<svg viewBox="0 0 ${w} ${h}" role="presentation" xmlns="http://www.w3.org/2000/svg">${parts.join('')}</svg>`;
+}
+
+const cards = ATTENDANCE_BLANKS.map((blank) => ({ blank, svg: preview(SHAPES[blank.key]!) }));
 
 const faqs: FaqEntry[] = [
   {
-    q: `How many students does the blank fit?`,
-    a: `25 numbered rows, which covers most classes with room to spare. Need more? Open the roster maker, paste your list, and the rows resize to fit the whole class on one page — however many there are.`,
+    q: `Which one should I print?`,
+    a: `Standard, unless you know otherwise — 25 rows covers most classes with a few spare lines. Take the 35-row sheet for a big section, the 15-row one when you want room to write, portrait if it lives in a binder, and A4 outside the US.`,
   },
   {
-    q: `Does it know which days are school days?`,
-    a: `The blank lays out a full month of Mon–Fri columns without dates, so you can use it for any month and write them in. The filled-in version puts the real day numbers and weekdays in for the month you pick.`,
+    q: `Do the columns have dates on them?`,
+    a: `No. The blanks lay out a full month of Mon–Fri columns with the dates left off, so one printout works for any month. The <a href="/attendance/">filled-in version</a> puts the real day numbers and weekdays in for the month you pick.`,
   },
   {
     q: `Is it really free, with no watermark?`,
-    a: `Yes. No signup, no watermark, no limit on how many you print. The PDF is built in your browser — the file is never uploaded anywhere to be made.`,
+    a: `Yes. No signup, no watermark, no limit on how many you print. Every PDF here is built in your browser — the file is never uploaded anywhere to be made, and nothing about your class is sent.`,
   },
   {
-    q: `Can I get it in A4?`,
-    a: `The blank here is US Letter. Open the <a href="/attendance/">roster maker</a> and switch Paper to A4 — the blank version is just the same sheet with no names in it.`,
+    q: `Why is there an ink-saving version?`,
+    a: `The day-header band is a solid fill, and on a staffroom printer that is running low it is the first thing to go patchy. The ink-saver sheet is lines only — identical grid, nothing shaded.`,
+  },
+  {
+    q: `What if my class is bigger than 35?`,
+    a: `Open the <a href="/attendance/">roster maker</a> and paste your list: the rows size themselves to fit the whole class on one page, whatever the number, and the names come out alphabetized and numbered.`,
   },
 ];
 ---
 
 <Layout
-  title="Blank Attendance Roster — Free Printable PDF | RosterOwl"
-  description="Free blank attendance roster to print and fill in by hand: 25 numbered rows, a full month of Mon–Fri columns, one clean page. No signup, no watermark — or paste your class list and have the names filled in for you."
+  title="Blank Attendance Roster — Free Printable PDFs | RosterOwl"
+  description="Free blank attendance rosters to print and fill in by hand: 15, 25 or 35 numbered rows, portrait or landscape, Letter or A4, plus an ink-saving version. One page each, no signup, no watermark."
 >
   <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
 
@@ -51,14 +128,38 @@ const faqs: FaqEntry[] = [
     <div class="page-head">
       <h1>Blank attendance roster</h1>
       <p>
-        One page, 25 numbered rows, a full month of Mon–Fri columns — print it and write your
-        students in by hand. Free · no signup · no watermark.
+        Numbered rows down the side, a month of Mon–Fri columns across the top, nothing filled in —
+        print it and write your students in by hand. Six sizes below, one page each. Free · no
+        signup · no watermark.
       </p>
     </div>
 
-    <div class="get">
-      <BlankDownload client:load blankKey="attendance" />
-      <span>US Letter PDF, built in your browser — nothing is uploaded to make it.</span>
+    <div class="make-own">
+      <a class="btn primary" href="/attendance/">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </svg>
+        Make your own roster instead
+      </a>
+      <p>
+        Paste your class list once and the names come out already on the sheet — alphabetized,
+        numbered, and rebuilt for any month you pick. Still free, still nothing uploaded.
+      </p>
+    </div>
+
+    <div class="blank-gallery">
+      {cards.map(({ blank, svg }) => (
+        <div class="card">
+          <div class="preview" set:html={svg} />
+          <div class="body">
+            <h2>{blank.label}</h2>
+            <p>{blank.hint}</p>
+            <div class="actions">
+              <BlankDownload client:visible blankKey={blank.key} />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
 
     <section class="content">
@@ -70,8 +171,9 @@ const faqs: FaqEntry[] = [
         so this is the same grid with the names left out.
       </p>
       <p>
-        It is the identical renderer the filled-in roster uses — the rows, the column widths, the
-        numbering are all the same. What changes is only that the name column arrives empty.
+        Every sheet here comes out of the identical renderer the filled-in roster uses — the row
+        numbering, the column widths, the Mon–Fri layout are all the same. The only difference is
+        that the name column arrives empty.
       </p>
 
       <h2>When it isn't</h2>
@@ -86,7 +188,7 @@ const faqs: FaqEntry[] = [
         The same class list also fills your
         <a href="/checklist/">class checklist</a>, <a href="/name-tags/">name tags</a> and
         <a href="/certificates/">certificates</a> — which is the point of keeping one roster.
-        More blanks for other tools are in the
+        Blanks for those tools are in the
         <a href="/printables/">printables gallery</a>.
       </p>
 
@@ -99,21 +201,39 @@ const faqs: FaqEntry[] = [
 </Layout>
 
 <style>
-  .get {
+  /* The alternative to the whole page, so it sits above the gallery rather than
+     under it — a teacher who wants the names filled in should not have to read
+     six card descriptions to find that out. */
+  .make-own {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-3) var(--space-4);
     flex-wrap: wrap;
-    max-width: var(--content-narrow);
+    max-width: var(--content-wide);
     margin-top: var(--space-5);
     padding: var(--space-4) var(--space-5);
     background: var(--brand-soft);
     border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
     border-radius: var(--radius-l);
   }
-  .get > span {
+
+  .make-own p {
+    flex: 1 1 22rem;
+    margin-bottom: 0;
     color: var(--muted);
     font-size: var(--text-sm);
+  }
+
+  .blank-gallery {
+    margin-top: var(--space-5);
+  }
+  /* One action per card here, unlike /printables/, where each card also offers
+     "fill it with your class list". Every card on this page is the same sheet,
+     so six identical links to the same tool would be noise — the page head and
+     both prose sections already make that offer once each. */
+  .blank-gallery .actions {
+    margin-top: auto;
+    padding-top: var(--space-2);
   }
   .content h2 {
     margin-top: var(--space-5);

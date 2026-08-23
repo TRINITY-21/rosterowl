@@ -41,26 +41,41 @@ function blankRoster(n: number): Student[] {
   }));
 }
 
-export const BLANKS: BlankSpec[] = [
-  {
-    key: 'attendance',
-    label: 'Monthly attendance sheet',
-    hint: '25 numbered rows and a full month of Mon–Fri columns',
+/**
+ * One blank attendance roster, described by the handful of things that actually
+ * differ between them. Everything else — the numbering, the Mon–Fri columns,
+ * the auto-fitting — is the tool's own renderer, so a blank can never drift
+ * from the sheet the filled-in version produces.
+ */
+function attendanceBlank(spec: {
+  key: string;
+  label: string;
+  hint: string;
+  filename: string;
+  rows: number;
+  paper?: 'letter' | 'a4';
+  orientation?: 'portrait' | 'landscape';
+  inkSaver?: boolean;
+}): BlankSpec {
+  return {
+    key: spec.key,
+    label: spec.label,
+    hint: spec.hint,
     toolHref: '/attendance/',
-    toolLabel: 'attendance sheet maker',
-    filename: 'Blank attendance sheet',
+    toolLabel: 'attendance roster maker',
+    filename: spec.filename,
     render: async (fonts) => {
       const { renderAttendancePdf } = await import('./pdfAttendance');
       const now = new Date();
       const { bytes } = await renderAttendancePdf(
-        blankRoster(25),
+        blankRoster(spec.rows),
         {
-          paper: 'letter',
-          orientation: 'landscape',
+          paper: spec.paper ?? 'letter',
+          orientation: spec.orientation ?? 'landscape',
           year: now.getFullYear(),
           month: now.getMonth(),
           nameOrder: 'roster',
-          inkSaver: false,
+          inkSaver: spec.inkSaver ?? false,
           showFooter: true,
           subtitle: '',
         },
@@ -68,7 +83,17 @@ export const BLANKS: BlankSpec[] = [
       );
       return bytes;
     },
-  },
+  };
+}
+
+export const BLANKS: BlankSpec[] = [
+  attendanceBlank({
+    key: 'attendance',
+    label: 'Monthly attendance sheet',
+    hint: '25 numbered rows and a full month of Mon–Fri columns',
+    filename: 'Blank attendance sheet',
+    rows: 25,
+  }),
   {
     key: 'checklist',
     label: 'Class checklist grid',
@@ -200,4 +225,65 @@ export const BLANKS: BlankSpec[] = [
       return bytes;
     },
   },
+];
+
+/**
+ * The blank attendance roster in the shapes teachers actually ask for. Kept out
+ * of BLANKS on purpose: /printables/ is a gallery of *different sheets*, and
+ * five variations on one of them would bury the other five tools. These live on
+ * /attendance/blank-attendance-roster/ instead, where the visitor has already
+ * said which sheet they want and the only open question is which size.
+ */
+export const ATTENDANCE_BLANKS: BlankSpec[] = [
+  attendanceBlank({
+    key: 'attendance',
+    label: 'Standard — 25 rows',
+    hint: 'Letter, landscape. The everyday sheet: 25 numbered rows, a full month of Mon–Fri columns.',
+    filename: 'Blank attendance roster',
+    rows: 25,
+  }),
+  attendanceBlank({
+    key: 'attendance-35',
+    label: 'Large class — 35 rows',
+    hint: 'Letter, landscape. Ten more rows for a lecture section or a combined group, still on one page.',
+    filename: 'Blank attendance roster (35 rows)',
+    rows: 35,
+  }),
+  attendanceBlank({
+    key: 'attendance-15',
+    label: 'Small group — 15 rows',
+    hint: 'Letter, landscape. Taller rows with room to write, for a club, an intervention group or a homeroom.',
+    filename: 'Blank attendance roster (15 rows)',
+    rows: 15,
+  }),
+  attendanceBlank({
+    key: 'attendance-portrait',
+    label: 'Portrait — fits a binder',
+    hint: 'Letter, upright. The same roster turned to portrait, so it sits in a binder or on a clipboard.',
+    filename: 'Blank attendance roster (portrait)',
+    rows: 25,
+    orientation: 'portrait',
+  }),
+  attendanceBlank({
+    key: 'attendance-a4',
+    label: 'A4 — outside the US',
+    hint: 'A4, landscape. Identical sheet on the paper the rest of the world prints on.',
+    filename: 'Blank attendance roster (A4)',
+    rows: 25,
+    paper: 'a4',
+  }),
+  attendanceBlank({
+    key: 'attendance-ink-saver',
+    label: 'Ink saver — no shading',
+    hint: 'Letter, landscape. Lines only, no filled headers — kinder to a staffroom printer running low.',
+    filename: 'Blank attendance roster (ink saver)',
+    rows: 25,
+    inkSaver: true,
+  }),
+];
+
+/** Every blank the site can build, for lookups by key. */
+export const ALL_BLANKS: BlankSpec[] = [
+  ...BLANKS,
+  ...ATTENDANCE_BLANKS.filter((b) => !BLANKS.some((existing) => existing.key === b.key)),
 ];
