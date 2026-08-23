@@ -265,7 +265,7 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
             <span class="chip-count" data-class-count></span>
           </a>
           <a class="signin" href="/api/auth/google/start" data-signin>
-            <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
               <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
               <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
               <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/>
@@ -1037,20 +1037,35 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     }
   }
 
-  .signin {
+  /* One header-control recipe so Sign-in and the theme toggle stay a pair —
+     same height, same stroke, same pill ends. iOS otherwise pads <button>
+     and the moon grows past the Google control. */
+  .signin,
+  .theme-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    justify-content: center;
+    flex: none;
     height: 2.25rem;
-    padding: 0 0.85rem 0 0.65rem;
+    min-height: 2.25rem;
+    padding: 0;
     border: var(--rule);
     border-radius: var(--radius-pill);
     background: var(--surface);
     color: var(--ink);
+    line-height: 0;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .signin {
+    gap: 0.45rem;
+    padding: 0 0.85rem 0 0.65rem;
     font-size: var(--text-sm);
     font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
+    line-height: 1;
     transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
   }
 
@@ -1064,15 +1079,8 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
   }
 
   .theme-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 2.25rem;
-    height: 2.25rem;
-    border: var(--rule);
-    border-radius: var(--radius-m);
-    background: var(--surface);
-    color: var(--ink);
+    min-width: 2.25rem;
     transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease;
   }
 
@@ -1161,32 +1169,27 @@ const [planGroup, ...otherGroups] = TOOL_GROUPS;
     .site-brand span {
       font-size: 1.15rem;
     }
-    /* The labeled pill needs ~8px more than the default header gaps on a
-       390px phone. Tighten first; only drop the label below 380px. */
     .site-shell__inner {
       gap: var(--space-2);
     }
     .site-actions {
       gap: var(--space-1);
     }
+    .signin {
+      padding: 0 0.7rem 0 0.55rem;
+    }
   }
 
-  @media (max-width: 380px) {
-    /* 320px is the smoke-test floor. The labeled Sign-in pill does not fit
-       beside the wordmark here, so the label drops and the control stays as
-       the Google mark — still the thing a teacher on a phone needs to find.
-       tests/smoke.mjs asserts the page does not overflow at this width. */
-    .signin span {
+  /* The labeled pill plus the wordmark does not fit the 320px smoke floor.
+     Keep Sign in as words; drop only the brand letters — the owl still
+     marks home, and the control still says what it does.
+
+     375, not 360: with the wordmark shown the header needs 369px, so a 360px
+     cutoff left 361–368 overflowing — narrow, real, and missed by a smoke test
+     that only sampled 320. The test now sweeps the range instead. */
+  @media (max-width: 375px) {
+    .site-brand span {
       display: none;
-    }
-    .signin {
-      width: 2.25rem;
-      padding: 0;
-      justify-content: center;
-    }
-    .theme-toggle {
-      width: 2.25rem;
-      height: 2.25rem;
     }
   }
 

@@ -117,12 +117,27 @@ assert.equal(
   'mobile seating page should not overflow horizontally'
 );
 
-const phone = await (await browser.newContext({ viewport: { width: 320, height: 568 } })).newPage();
-await phone.goto(base + '/', { waitUntil: 'networkidle' });
-assert.equal(
-  await phone.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth),
-  false,
-  '320px home page should not overflow horizontally'
+// A single width cannot catch a narrow overflow band. The header's controls sit
+// on a knife edge — brand, tools menu, sign-in pill and theme toggle in one row
+// — and a breakpoint set a few pixels off leaves a range of real phones
+// scrolling sideways while 320 and 390 both pass. So sweep: common device
+// widths, plus one pixel either side of every breakpoint the header defines.
+const phoneCtx = await browser.newContext({ viewport: { width: 320, height: 568 } });
+const phone = await phoneCtx.newPage();
+const overflowed = [];
+for (const width of [320, 344, 359, 360, 361, 368, 375, 376, 390, 393, 412, 414, 430, 619, 620, 621, 768]) {
+  await phone.setViewportSize({ width, height: 568 });
+  await phone.goto(base + '/', { waitUntil: 'networkidle' });
+  const over = await phone.evaluate(() => ({
+    over: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    needs: document.documentElement.scrollWidth,
+  }));
+  if (over.over) overflowed.push(`${width}px (needs ${over.needs}px)`);
+}
+assert.deepEqual(
+  overflowed,
+  [],
+  `home page overflows horizontally at: ${overflowed.join(', ')} — check the header breakpoints in Layout.astro`
 );
 await phone.goto(base + '/seating-chart/', { waitUntil: 'networkidle' });
 await phone.waitForSelector('[data-desk-id]', { timeout: 15000 });
