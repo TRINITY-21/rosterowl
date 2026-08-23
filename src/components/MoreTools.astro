@@ -3,7 +3,7 @@
 // and drops whichever tool the reader is already on, so it never links to the
 // current page and never needs updating when a tool is added.
 import Icon from './Icon.svelte';
-import { ALL_TOOLS, PRINTABLES, SEATING_VARIANTS, activeToolHref } from '../lib/tools';
+import { ALL_TOOLS, ATTENDANCE_VARIANTS, PRINTABLES, SEATING_VARIANTS, activeToolHref } from '../lib/tools';
 
 interface Props {
   /** Heading override, for pages where the default reads oddly. */
@@ -17,6 +17,15 @@ const others = ALL_TOOLS.filter((t) => t.href !== current);
 // The seating pages already cross-link their own variants in body copy, and
 // /printables/ has its own "looking for a seating chart?" note.
 const showVariants = current !== '/seating-chart/' && !pathname.startsWith('/printables');
+// Inside the attendance cluster, offer its own variants — someone reading about
+// attendance rosters wants the other rosters, not the horseshoe seating chart.
+// Either list drops the page it is sitting on, so it never links to itself.
+const variants = [
+  ...(current === '/attendance/' ? ATTENDANCE_VARIANTS : SEATING_VARIANTS).filter(
+    (v) => v.href !== pathname
+  ),
+  PRINTABLES,
+];
 ---
 
 <section class="more-tools" aria-labelledby="more-tools-heading">
@@ -44,7 +53,7 @@ const showVariants = current !== '/seating-chart/' && !pathname.startsWith('/pri
   {showVariants && (
     <p class="mt-variants">
       <span>Ready to print:</span>
-      {[...SEATING_VARIANTS, PRINTABLES].map((v) => (
+      {variants.map((v) => (
         <a href={v.href}>{v.label}</a>
       ))}
     </p>

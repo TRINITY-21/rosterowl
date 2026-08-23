@@ -1,7 +1,7 @@
 // Structured-data and social-card helpers. Every tool page emits the same
 // SoftwareApplication shape; only the name, url, and description differ, so the
 // constant 12 lines live here once instead of being copy-pasted into each page.
-import { ALL_TOOLS, PRINTABLES, SEATING_VARIANTS } from './tools';
+import { ALL_TOOLS, ATTENDANCE_VARIANTS, PRINTABLES, SEATING_VARIANTS } from './tools';
 
 export const SITE_URL = 'https://rosterowl.com';
 
@@ -14,6 +14,7 @@ export const OG_ROUTES: string[] = [
   '/',
   ...ALL_TOOLS.map((t) => t.href),
   ...SEATING_VARIANTS.map((v) => v.href),
+  ...ATTENDANCE_VARIANTS.map((v) => v.href),
   PRINTABLES.href,
 ];
 

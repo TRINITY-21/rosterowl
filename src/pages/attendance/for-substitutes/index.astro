@@ -1,0 +1,104 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Faq from '../../../components/Faq.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import MoreTools from '../../../components/MoreTools.astro';
+import AttendanceApp from '../../../components/AttendanceApp.svelte';
+import { toolJsonLd, type FaqEntry } from '../../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Attendance Roster for Substitutes',
+  path: '/attendance/for-substitutes/',
+  description:
+    'Print an attendance roster a substitute can actually use: every student listed and numbered, the month laid out, and nothing that assumes they know the class.',
+});
+
+const faqs: FaqEntry[] = [
+  {
+    q: `Should I mark known absences before I print?`,
+    a: `No — leave the sheet clean. A student marked absent in advance is a student the sub will not call, and plans change. Print the full list and let them mark what they find.`,
+  },
+  {
+    q: `First names or "Last, First"?`,
+    a: `"Last, First" if the office wants the sheet back, since that is the order the roll is usually kept in. First name order is kinder to a sub reading names aloud to a class they have never met — you can print one of each.`,
+  },
+  {
+    q: `What if a student joins while I'm out?`,
+    a: `There are blank numbered rows below the last name for exactly that. Add them to your class list when you are back and every later roster includes them.`,
+  },
+  {
+    q: `Anything else worth leaving out?`,
+    a: `A seating chart, if the class is one where names matter. The <a href="/seating-chart/for-substitutes/">substitute seating chart</a> prints the room with every name in place, which is what turns a roster into something a stranger can actually use.`,
+  },
+];
+---
+
+<Layout
+  title="Attendance Roster for Substitute Teachers | RosterOwl"
+  description="Print an attendance roster a substitute can use: every student numbered and listed, the month laid out, blank rows for arrivals. Free, no signup — pairs with a printable seating chart."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Attendance roster', href: '/attendance/' },
+        { label: 'For substitutes' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>Attendance roster for a substitute</h1>
+      <p>
+        You are out tomorrow and someone who has never met these students has to take the roll.
+        Print the month's roster now — numbered, alphabetized, nothing assumed. Free · no signup ·
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
+      </p>
+    </div>
+
+    <AttendanceApp client:only="svelte" />
+
+    <section class="content">
+      <h2>What a substitute actually needs</h2>
+      <p>
+        Not your system. A sub cannot read your shorthand, does not know that Maddie is Madison
+        R., and has no idea which two students answer to the same first name. What travels is a
+        list: every student, in a stable order, numbered so a headcount takes one glance, with
+        empty cells they can mark however the office asks.
+      </p>
+      <p>
+        That is the whole design of this sheet, and it is why the useful version is the one you
+        print <em>before</em> you are ill rather than the one you improvise at 6am. It takes a
+        minute while your class list is already on screen.
+      </p>
+
+      <h2>Leave the seating chart with it</h2>
+      <p>
+        A roster tells a sub who should be there; a seating chart tells them who is who. The two
+        together are the difference between "please raise your hand when I read your name" and a
+        sub who can address students directly from the first minute. The
+        <a href="/seating-chart/for-substitutes/">substitute seating chart</a> prints your real
+        room with every name placed, from the same class list — so the pair is two clicks, not
+        two projects.
+      </p>
+      <p>
+        Also worth the clipboard: a <a href="/attendance/blank-attendance-roster/">blank
+        roster</a> for anyone who turns up unlisted, and a
+        <a href="/checklist/">class checklist</a> if you need work handed in and recorded while
+        you are away.
+      </p>
+
+      <Faq entries={faqs} />
+    </section>
+    <MoreTools />
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+</style>

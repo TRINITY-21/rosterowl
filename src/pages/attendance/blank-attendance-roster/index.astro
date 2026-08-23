@@ -1,0 +1,121 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Faq from '../../../components/Faq.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import MoreTools from '../../../components/MoreTools.astro';
+import BlankDownload from '../../../components/BlankDownload.svelte';
+import { toolJsonLd, type FaqEntry } from '../../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Blank Attendance Roster',
+  path: '/attendance/blank-attendance-roster/',
+  description:
+    'Free blank attendance roster to print and fill in by hand: 25 numbered rows and a full month of Mon–Fri columns on one page. No signup, no watermark.',
+});
+
+const faqs: FaqEntry[] = [
+  {
+    q: `How many students does the blank fit?`,
+    a: `25 numbered rows, which covers most classes with room to spare. Need more? Open the roster maker, paste your list, and the rows resize to fit the whole class on one page — however many there are.`,
+  },
+  {
+    q: `Does it know which days are school days?`,
+    a: `The blank lays out a full month of Mon–Fri columns without dates, so you can use it for any month and write them in. The filled-in version puts the real day numbers and weekdays in for the month you pick.`,
+  },
+  {
+    q: `Is it really free, with no watermark?`,
+    a: `Yes. No signup, no watermark, no limit on how many you print. The PDF is built in your browser — the file is never uploaded anywhere to be made.`,
+  },
+  {
+    q: `Can I get it in A4?`,
+    a: `The blank here is US Letter. Open the <a href="/attendance/">roster maker</a> and switch Paper to A4 — the blank version is just the same sheet with no names in it.`,
+  },
+];
+---
+
+<Layout
+  title="Blank Attendance Roster — Free Printable PDF | RosterOwl"
+  description="Free blank attendance roster to print and fill in by hand: 25 numbered rows, a full month of Mon–Fri columns, one clean page. No signup, no watermark — or paste your class list and have the names filled in for you."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Attendance roster', href: '/attendance/' },
+        { label: 'Blank roster' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>Blank attendance roster</h1>
+      <p>
+        One page, 25 numbered rows, a full month of Mon–Fri columns — print it and write your
+        students in by hand. Free · no signup · no watermark.
+      </p>
+    </div>
+
+    <div class="get">
+      <BlankDownload client:load blankKey="attendance" />
+      <span>US Letter PDF, built in your browser — nothing is uploaded to make it.</span>
+    </div>
+
+    <section class="content">
+      <h2>When the blank is the right answer</h2>
+      <p>
+        Sometimes you want paper, not data entry: a roster for a club that meets four times, a
+        spare on the clipboard for a fire drill, a sheet for the volunteer who runs Thursday
+        reading groups. Typing a class list to produce those is more work than the sheet saves,
+        so this is the same grid with the names left out.
+      </p>
+      <p>
+        It is the identical renderer the filled-in roster uses — the rows, the column widths, the
+        numbering are all the same. What changes is only that the name column arrives empty.
+      </p>
+
+      <h2>When it isn't</h2>
+      <p>
+        If you are going to print this every month for the same class, type the class list once
+        instead. The <a href="/attendance/">attendance roster maker</a> keeps your students on
+        this device, alphabetizes them "Last, First", numbers the rows, and rebuilds the sheet
+        for any month you pick — so next month is one click rather than 25 handwritten names.
+        Add a student mid-year and every future roster includes them.
+      </p>
+      <p>
+        The same class list also fills your
+        <a href="/checklist/">class checklist</a>, <a href="/name-tags/">name tags</a> and
+        <a href="/certificates/">certificates</a> — which is the point of keeping one roster.
+        More blanks for other tools are in the
+        <a href="/printables/">printables gallery</a>.
+      </p>
+
+      <Faq entries={faqs} />
+    </section>
+    <MoreTools />
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  .get {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    max-width: var(--content-narrow);
+    margin-top: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    background: var(--brand-soft);
+    border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+    border-radius: var(--radius-l);
+  }
+  .get > span {
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+</style>

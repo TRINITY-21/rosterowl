@@ -1,6 +1,6 @@
 ---
 import OwlMark from './OwlMark.svelte';
-import { PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
+import { ATTENDANCE_VARIANTS, PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../lib/tools';
 import { SITE_PAGES } from '../lib/site';
 
 interface Props {
@@ -17,12 +17,20 @@ const planLinks = [
   ...SEATING_VARIANTS.map((v) => ({ href: v.href, label: v.label })),
   { href: PRINTABLES.href, label: PRINTABLES.label },
 ];
+// The attendance variants sit directly under their parent tool, the way the
+// seating ones sit under theirs — on a site with no inbound links yet, a footer
+// link is how a new page gets crawled at all.
 const columns = [
   { key: 'plan', label: 'Plan the room', links: planLinks },
   ...otherGroups.map((g) => ({
     key: g.key,
     label: g.label,
-    links: g.tools.map((t) => ({ href: t.href, label: t.title })),
+    links: g.tools.flatMap((t) => [
+      { href: t.href, label: t.title },
+      ...(t.href === '/attendance/'
+        ? ATTENDANCE_VARIANTS.map((v) => ({ href: v.href, label: v.label }))
+        : []),
+    ]),
   })),
 ];
 ---

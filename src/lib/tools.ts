@@ -42,6 +42,19 @@ export const SEATING_VARIANTS = [
   { href: '/seating-chart/templates/', label: 'Blank seating charts' },
 ] as const;
 
+/**
+ * Pre-configured attendance pages, added after Search Console showed the tool
+ * ranking for "attendance roster" — a phrase the page never used — while its
+ * own "attendance sheet" wording earned nothing. Same rule as the seating
+ * variants: each is a working tool answering a different situation, not a
+ * doorway page with a swapped heading.
+ */
+export const ATTENDANCE_VARIANTS = [
+  { href: '/attendance/blank-attendance-roster/', label: 'Blank attendance roster' },
+  { href: '/attendance/class-attendance-roster/', label: 'One roster per class' },
+  { href: '/attendance/for-substitutes/', label: 'For substitutes' },
+] as const;
+
 /** The blank-printables hub. Linked wherever the variants are. */
 export const PRINTABLES = { href: '/printables/', label: 'Blank printables' } as const;
 
@@ -112,10 +125,10 @@ export const TOOL_GROUPS: ToolGroup[] = [
       {
         href: '/attendance/',
         label: 'Attendance',
-        title: 'Attendance sheet',
+        title: 'Attendance roster',
         icon: 'printer',
         blurb: "The month's real school days, pre-built",
-        copy: "The month's real school days across the top, your class down the side — the attendance sheet, rebuilt in one click.",
+        copy: "The month's real school days across the top, your class down the side — the attendance roster, rebuilt in one click.",
       },
       {
         href: '/bingo/',

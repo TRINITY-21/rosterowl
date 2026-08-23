@@ -1,0 +1,105 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Faq from '../../../components/Faq.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import MoreTools from '../../../components/MoreTools.astro';
+import AttendanceApp from '../../../components/AttendanceApp.svelte';
+import { toolJsonLd, type FaqEntry } from '../../../lib/seo';
+
+const jsonLd = toolJsonLd({
+  name: 'RosterOwl Class Attendance Roster',
+  path: '/attendance/class-attendance-roster/',
+  description:
+    'A separate attendance roster for every class you teach: keep each period as its own class list and print any of them for any month, without retyping a single name.',
+});
+
+const faqs: FaqEntry[] = [
+  {
+    q: `How many classes can I keep?`,
+    a: `As many as you teach. Each is its own class list with its own students, and switching between them is a dropdown — the roster you print always matches the class you are on.`,
+  },
+  {
+    q: `Can two classes share a student?`,
+    a: `Yes — add them to both. The classes are independent lists, so a student who shows up in your homeroom and your third period is simply on both, and marking them absent on one roster does not touch the other.`,
+  },
+  {
+    q: `What order are the names in?`,
+    a: `"Last, First" A→Z by default, the way attendance rosters usually run, with the rows numbered so a headcount is one glance. You can switch to first name or keep your own roster order — the choice is per print, so different classes can differ.`,
+  },
+  {
+    q: `Will my classes still be here in the morning?`,
+    a: `They stay in this browser on this device. If you want the same classes at home as at school, <a href="/privacy/">optional sync</a> copies them to your account — off until you switch it on.`,
+  },
+];
+---
+
+<Layout
+  title="Class Attendance Roster — One Per Period | RosterOwl"
+  description="Keep a separate attendance roster for every class you teach: each period is its own class list, and any of them prints for any month in a click. Free, no signup, no names retyped."
+>
+  <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
+
+  <main class="tool-page">
+    <Breadcrumbs
+      trail={[
+        { label: 'Home', href: '/' },
+        { label: 'Attendance roster', href: '/attendance/' },
+        { label: 'One per class' },
+      ]}
+    />
+    <div class="page-head">
+      <h1>A class attendance roster for every period</h1>
+      <p>
+        Five classes means five rosters, and retyping the names five times is the part that
+        stops people. Keep each class as its own list here, then print any of them for any
+        month. Free · no signup ·
+        <a href="/privacy/">nothing uploaded unless you turn on sync</a>.
+      </p>
+    </div>
+
+    <AttendanceApp client:only="svelte" />
+
+    <section class="content">
+      <h2>One list per class, not one file per month</h2>
+      <p>
+        The usual arrangement is a spreadsheet per class per month, copied forward and edited —
+        which works until a student transfers in and you are correcting four files. Here the
+        class list is the thing you keep, and the roster is generated from it. Add a student
+        once and every future month has them, in the right alphabetical place, with the rows
+        renumbered.
+      </p>
+      <p>
+        Because the list is the durable part, it is also the part every other tool reads. The
+        third-period roster that prints your attendance is the same third-period roster behind
+        your <a href="/group-maker/">groups</a>, <a href="/picker/">student picker</a> and
+        <a href="/seating-chart/">seating chart</a>. Name a student once, per class, ever.
+      </p>
+
+      <h2>Switching classes</h2>
+      <p>
+        The class selector sits above the sheet. Change class and the preview redraws with that
+        class's students — same month, same layout, different names — so printing a set for the
+        whole day is a matter of clicking through the list. Each downloaded PDF is named for its
+        class and month, which matters once there are five of them in your downloads folder.
+      </p>
+      <p>
+        Want the grid without any names, for a club or a one-off? That is the
+        <a href="/attendance/blank-attendance-roster/">blank attendance roster</a>. Leaving the
+        class with someone else? The
+        <a href="/attendance/for-substitutes/">substitute version</a> covers what to put out.
+      </p>
+
+      <Faq entries={faqs} />
+    </section>
+    <MoreTools />
+  </main>
+
+  <SiteFooter />
+</Layout>
+
+<style>
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+</style>

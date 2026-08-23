@@ -17,7 +17,7 @@ import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ALL_TOOLS, PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../../src/lib/tools.ts';
+import { ALL_TOOLS, ATTENDANCE_VARIANTS, PRINTABLES, SEATING, SEATING_VARIANTS, TOOL_GROUPS } from '../../src/lib/tools.ts';
 import { OG_ROUTES, ogSlug } from '../../src/lib/seo.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -56,6 +56,12 @@ function contentFor(route) {
   }
   const variant = SEATING_VARIANTS.find((v) => v.href === route);
   if (variant) return { eyebrow: 'Seating chart maker', headline: variant.label, sub: SEATING.copy };
+
+  const attendance = ATTENDANCE_VARIANTS.find((v) => v.href === route);
+  if (attendance) {
+    const tool = ALL_TOOLS.find((t) => t.href === '/attendance/');
+    return { eyebrow: 'Attendance roster', headline: attendance.label, sub: tool.copy };
+  }
 
   if (route === PRINTABLES.href) {
     return {

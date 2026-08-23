@@ -7,13 +7,17 @@ import AttendanceApp from '../../components/AttendanceApp.svelte';
 import { toolJsonLd, type FaqEntry } from '../../lib/seo';
 
 const jsonLd = toolJsonLd({
-  name: 'RosterOwl Attendance Sheet Generator',
+  name: 'RosterOwl Attendance Roster Maker',
   path: '/attendance/',
   description:
-    'Printable monthly attendance sheet with your students already listed: pick a month and download a one-page sheet — roster down the side, every school day (Mon–Fri) across the top. Free, no signup — nothing uploaded unless you turn on sync.',
+    'Free online attendance roster with your students already listed: pick a month and download a printable one-page sheet — names down the side, every school day (Mon–Fri) across the top. No signup — nothing uploaded unless you turn on sync.',
 });
 
 const faqs: FaqEntry[] = [
+  {
+    q: `Is this an attendance roster or an attendance sheet?`,
+    a: `The same thing under different names. Roster, attendance sheet, roll sheet, register, attendance form — whichever your school says, this makes the one-page monthly grid with your class down the side and the month's school days across the top.`,
+  },
   {
     q: `What do the blank cells mean?`,
     a: `Whatever you want them to. Mark it your way — ✓ present, A absent, T tardy — it's your system; the sheet just gives you the grid.`,
@@ -24,20 +28,20 @@ const faqs: FaqEntry[] = [
   },
   {
     q: `A new student joined — do I redo the sheet?`,
-    a: `Add them once to your class list and every future sheet includes them, re-alphabetized automatically. That's the point of the shared roster.`,
+    a: `Add them once to your class list and every future roster includes them, re-alphabetized automatically. That's the point of keeping one roster instead of a folder of spreadsheets.`,
   },
 ];
 ---
 
 <Layout
-  title="Printable Attendance Sheet — Monthly Grid | RosterOwl"
-  description="Monthly attendance sheet in one click: your class list down the side, the month's real school days (Mon–Fri) across the top, blank cells for your own marks. One page, numbered, alphabetized. Free, no signup."
+  title="Attendance Roster Maker — Free Monthly Sheet | RosterOwl"
+  description="Free online attendance roster in one click: your class list down the side, the month's real school days (Mon–Fri) across the top, blank cells for your own marks. One page, numbered, alphabetized. No signup, no watermark."
 >
   <script is:inline type="application/ld+json" set:html={jsonLd} slot="head" />
 
   <main class="tool-page">
     <div class="page-head">
-      <h1>Monthly attendance sheet</h1>
+      <h1>Monthly attendance roster</h1>
       <p>
         Pick a month — your students down the side, every school day (Mon–Fri) across the top,
         blank cells for your own marks. One page, numbered, alphabetized. Free · no signup ·
@@ -78,6 +82,26 @@ const faqs: FaqEntry[] = [
         </div>
       </div>
 
+      <h2>Which roster do you need?</h2>
+      <p>
+        This page fills the grid in from your class list. Three other versions answer the
+        situations that come up around it:
+      </p>
+      <ul class="roster-links">
+        <li>
+          <a href="/attendance/blank-attendance-roster/">Blank attendance roster</a> — the same
+          sheet with empty name rows, for writing in by hand.
+        </li>
+        <li>
+          <a href="/attendance/class-attendance-roster/">One roster per class</a> — a separate
+          sheet for each period, all from the same app.
+        </li>
+        <li>
+          <a href="/attendance/for-substitutes/">Attendance roster for a substitute</a> — what to
+          leave out so a sub can take the register without you.
+        </li>
+      </ul>
+
       <Faq entries={faqs} />
     </section>
     <MoreTools />
@@ -85,3 +109,15 @@ const faqs: FaqEntry[] = [
 
   <SiteFooter />
 </Layout>
+
+<style>
+  .content h2 {
+    margin-top: var(--space-5);
+  }
+  .roster-links {
+    max-width: 42rem;
+  }
+  .roster-links li {
+    margin-bottom: var(--space-2);
+  }
+</style>
