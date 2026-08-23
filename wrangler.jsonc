@@ -12,7 +12,20 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // Without this, sign-in is broken and nothing in the code is at fault.
+    //
+    // The asset router runs before the Worker. For a request that matches no
+    // asset, "404-page" serves dist/404.html — but ONLY for navigations, which
+    // it recognises by Sec-Fetch-Mode: navigate. The Worker is never invoked.
+    // So /api/me over fetch() reached the Worker and worked, while clicking
+    // "Continue with Google" — a navigation to /api/auth/google/start, and then
+    // Google navigating back to /api/auth/google/callback — got the 404 page,
+    // as did curl the moment that one header was added.
+    //
+    // Routing /api/* to the Worker first restores both hops. Everything else
+    // still goes to assets first, so the static site costs no invocations.
+    "run_worker_first": ["/api/*"]
   },
 
   "d1_databases": [
