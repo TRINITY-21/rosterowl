@@ -7,7 +7,8 @@ import {
   schoolDays,
 } from '../src/lib/pdfAttendance';
 import type { AttendanceOptions } from '../src/lib/pdfAttendance';
-import type { Student } from '../src/lib/types';
+import type { AttendanceLog, Student } from '../src/lib/types';
+import { pdfText } from './pdfText';
 
 const stu = (id: string, first: string, last: string, absent = false): Student => ({
   id,
@@ -153,5 +154,52 @@ describe('renderAttendancePdf unrenderable names', () => {
   it('reports on the empty-roster path too', async () => {
     const { unrenderable } = await renderAttendancePdf([], baseOpts, fonts);
     expect(unrenderable).toEqual([]);
+  });
+});
+
+describe('renderAttendancePdf with a log', () => {
+  const oct: AttendanceOptions = { ...baseOpts, month: 9 }; // October 2026: 22 school days
+
+  it('leaves an untaken month exactly as the blank register', async () => {
+    const other: AttendanceLog = { days: { '2026-09-30': { a: 'absent' } }, joined: {} };
+    const plain = await renderAttendancePdf(roster, oct, fonts);
+    const withLog = await renderAttendancePdf(roster, oct, fonts, other);
+    expect(withLog.daysTaken).toBe(0);
+    expect(await pdfText(withLog.bytes)).toEqual(await pdfText(plain.bytes));
+    expect(await pdfText(plain.bytes)).not.toContain('Abs');
+  });
+
+  it('prints A and L on taken days, the totals headers and the taken-days line', async () => {
+    const log: AttendanceLog = {
+      days: { '2026-10-01': { b: 'absent' }, '2026-10-02': { b: 'absent', c: 'late' }, '2026-10-05': {} },
+      joined: {},
+    };
+    const r = await renderAttendancePdf(roster, oct, fonts, log);
+    const text = await pdfText(r.bytes);
+    expect(r.daysTaken).toBe(3);
+    expect(text.filter((s) => s === 'A')).toHaveLength(2);
+    expect(text.filter((s) => s === 'L')).toHaveLength(1);
+    expect(text).toEqual(expect.arrayContaining(['Abs', 'Late', 'Taken on 3 of 22 school days']));
+  });
+
+  it('keeps a fully marked month on one page with totals (48 landscape, 60 portrait)', async () => {
+    for (const [n, orientation] of [[48, 'landscape'], [60, 'portrait']] as const) {
+      const big = Array.from({ length: n }, (_, i) => stu(`s${i}`, `Kid${i}`, `Lastname${i}`));
+      const days: AttendanceLog['days'] = {};
+      for (const { day } of schoolDays(2026, 9)) {
+        const key = `2026-10-${String(day).padStart(2, '0')}`;
+        days[key] = Object.fromEntries(big.filter((_, i) => i % 2 === 0).map((s) => [s.id, 'absent' as const]));
+      }
+      const r = await renderAttendancePdf(big, { ...oct, orientation }, fonts, { days, joined: {} });
+      expect(r.daysTaken).toBe(22);
+      expect((await PDFDocument.load(r.bytes)).getPageCount()).toBe(1);
+    }
+  });
+
+  it('renders marks in ink-saver portrait without throwing', async () => {
+    const log: AttendanceLog = { days: { '2026-10-01': { a: 'absent', c: 'late' } }, joined: { d: '2026-10-02' } };
+    const r = await renderAttendancePdf(roster, { ...oct, inkSaver: true, orientation: 'portrait' }, fonts, log);
+    expect((await PDFDocument.load(r.bytes)).getPageCount()).toBe(1);
+    expect((await pdfText(r.bytes)).filter((s) => s === 'A')).toHaveLength(1);
   });
 });

@@ -1,14 +1,15 @@
 // Monthly attendance register: roster down the side, the month's school days
-// (Mon–Fri) across the top, blank cells for the teacher's own marks.
+// (Mon–Fri) across the top. Days the teacher took in RosterOwl carry ✓ / A / L
+// and per-student totals; every other cell stays blank for hand marks.
 // Always one page — rows and day columns scale down, they never overflow.
 
 import fontkit from '@pdf-lib/fontkit';
 import type { PDFFont } from 'pdf-lib';
 import { PDFDocument, rgb } from 'pdf-lib';
-import type { PdfFonts, Student } from './types';
+import type { AttendanceLog, PdfFonts, Student } from './types';
 import type { NameOrder } from './pdfChecklist';
 import { orderedNames } from './pdfChecklist';
-import { schoolDays } from './attendance';
+import { dateKey, dayState, monthTotals, schoolDays } from './attendance';
 
 // Moved to attendance.ts (no pdf-lib there); re-exported for existing callers.
 export { schoolDays } from './attendance';
@@ -54,6 +55,10 @@ const FAINT = rgb(0.62, 0.62, 0.62);
 const LINE = rgb(0.78, 0.75, 0.68);
 const ZEBRA = rgb(0.972, 0.962, 0.937);
 const BLACK = rgb(0, 0, 0);
+const ABSENT = rgb(0.72, 0.25, 0.2);
+const LATE = rgb(0.75, 0.52, 0.1);
+/** Width of each totals column ("Abs", "Late"), present only on a marked month. */
+const TOTALS_W = 26;
 
 function fit(font: PDFFont, text: string, maxW: number, max: number): number {
   const unitW = font.widthOfTextAtSize(text, 1);
@@ -61,11 +66,16 @@ function fit(font: PDFFont, text: string, maxW: number, max: number): number {
   return Math.min(max, maxW / unitW);
 }
 
+/**
+ * @param log the class's attendance. Omitted, or with no taken day in this
+ * month, the sheet is exactly the blank register.
+ */
 export async function renderAttendancePdf(
   students: Student[],
   opts: AttendanceOptions,
   fonts: PdfFonts,
-): Promise<{ bytes: Uint8Array; rows: number; days: number; unrenderable: string[] }> {
+  log?: AttendanceLog,
+): Promise<{ bytes: Uint8Array; rows: number; days: number; daysTaken: number; unrenderable: string[] }> {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   const regular = await doc.embedFont(fonts.regular, { subset: true });
@@ -79,8 +89,12 @@ export async function renderAttendancePdf(
   const ink = opts.inkSaver;
 
   const dayList = schoolDays(opts.year, opts.month);
-  // Names only — never absent flags, zone prefs, or any other roster tag.
+  // Names and the marks the teacher took — never the live absent flag, zone
+  // prefs, or any other roster tag.
   const rows = orderedNames(students, opts.nameOrder);
+  const totals = log ? monthTotals(log, students, opts.year, opts.month) : null;
+  const daysTaken = totals?.daysTaken ?? 0;
+  const marked = daysTaken > 0;
 
   // Atkinson covers Latin only: names outside its cmap would print as .notdef
   // boxes with no error. Detect them so the UI can warn before printing.
@@ -101,6 +115,11 @@ export async function renderAttendancePdf(
     const sub = opts.subtitle.trim();
     page.drawText(sub, { x: MARGIN, y, size: fit(regular, sub, contentW, 10), font: regular, color: GRAY });
   }
+  if (marked) {
+    y -= 12;
+    const taken = `Taken on ${daysTaken} of ${totals!.schoolDayCount} school days`;
+    page.drawText(taken, { x: MARGIN, y, size: fit(regular, taken, contentW, 9), font: regular, color: ink ? BLACK : GRAY });
+  }
   y -= 10;
   page.drawLine({
     start: { x: MARGIN, y },
@@ -120,7 +139,9 @@ export async function renderAttendancePdf(
     });
   }
 
-  if (rows.length === 0) return { bytes: await doc.save(), rows: 0, days: dayList.length, unrenderable };
+  if (rows.length === 0) {
+    return { bytes: await doc.save(), rows: 0, days: dayList.length, daysTaken, unrenderable };
+  }
 
   // ----- Table geometry: always one page -----
   const tableBottom = MARGIN - 6 + 18;
@@ -132,15 +153,17 @@ export async function renderAttendancePdf(
 
   const indexW = 22;
   const nameW = contentW * 0.28;
+  const totalsW = marked ? TOTALS_W * 2 : 0;
   // No minimum day-column width either: every school day always fits across.
-  const dayW = dayList.length > 0 ? (contentW - indexW - nameW) / dayList.length : 0;
+  const dayW = dayList.length > 0 ? (contentW - indexW - nameW - totalsW) / dayList.length : 0;
 
   const nameSize = Math.min(10, rowH * 0.62);
   const gridColor = ink ? BLACK : LINE;
   const gridWidth = 0.6;
   const tableH = headerH + rowH * rows.length;
   const left = MARGIN;
-  const right = left + indexW + nameW + dayW * dayList.length;
+  const daysRight = left + indexW + nameW + dayW * dayList.length;
+  const right = daysRight + totalsW;
 
   // Zebra striping behind alternating rows (skip in ink-saver).
   if (!ink) {
@@ -178,7 +201,65 @@ export async function renderAttendancePdf(
     });
   }
 
-  // Row index + names. Day cells stay empty — teachers write their own marks.
+  if (marked) {
+    for (const [k, label] of ['Abs', 'Late'].entries()) {
+      const size = Math.min(7, fit(bold, label, TOTALS_W - 4, 7));
+      page.drawText(label, {
+        x: daysRight + TOTALS_W * k + (TOTALS_W - bold.widthOfTextAtSize(label, size)) / 2,
+        y: tableTop - headerH / 2 - size / 2 + 1,
+        size,
+        font: bold,
+        color: ink ? BLACK : GREEN,
+      });
+    }
+  }
+
+  const dayKeys = dayList.map(({ day }) => dateKey(new Date(opts.year, opts.month, day)));
+  const markSize = Math.min(nameSize, dayW * 0.7);
+  const drawRowMarks = (i: number, student: Student) => {
+    const cellBottom = tableTop - headerH - rowH * (i + 1);
+    for (let c = 0; c < dayKeys.length; c++) {
+      const key = dayKeys[c]!;
+      if (!(key in log!.days)) continue;
+      const state = dayState(log!, key, student.id);
+      const x0 = left + indexW + nameW + dayW * c;
+      if (state === 'present') {
+        // Drawn, not typed: neither Atkinson nor Baloo has a ✓ (U+2713) glyph.
+        const side = Math.min(dayW, rowH) * 0.62;
+        const sx = x0 + (dayW - side) / 2;
+        const sy = cellBottom + (rowH - side) / 2;
+        const pt = (fx: number, fy: number) => ({ x: sx + side * fx, y: sy + side * fy });
+        const line = { thickness: Math.max(0.6, side * 0.09), color: ink ? BLACK : GREEN };
+        page.drawLine({ start: pt(0.28, 0.52), end: pt(0.44, 0.34), ...line });
+        page.drawLine({ start: pt(0.44, 0.34), end: pt(0.74, 0.72), ...line });
+      } else if (state === 'absent' || state === 'late') {
+        const letter = state === 'absent' ? 'A' : 'L';
+        const font = ink && state === 'late' ? regular : bold;
+        page.drawText(letter, {
+          x: x0 + (dayW - font.widthOfTextAtSize(letter, markSize)) / 2,
+          y: cellBottom + (rowH - markSize) / 2 + 1,
+          size: markSize,
+          font,
+          color: ink ? BLACK : state === 'absent' ? ABSENT : LATE,
+        });
+      }
+      // 'not-enrolled': before the student joined — left blank.
+    }
+    const counts = totals!.perStudent.get(student.id) ?? { absent: 0, late: 0 };
+    for (const [k, n] of [counts.absent, counts.late].entries()) {
+      const text = String(n);
+      page.drawText(text, {
+        x: daysRight + TOTALS_W * k + (TOTALS_W - regular.widthOfTextAtSize(text, nameSize)) / 2,
+        y: cellBottom + (rowH - nameSize) / 2 + 1,
+        size: nameSize,
+        font: regular,
+        // A zero is the common case; keep it quiet so the real counts stand out.
+        color: n === 0 ? FAINT : ink ? BLACK : INK,
+      });
+    }
+  };
+
+  // Row index + names. Untaken day cells stay empty for the teacher's own marks.
   for (let i = 0; i < rows.length; i++) {
     const baseY = tableTop - headerH - rowH * (i + 1) + (rowH - nameSize) / 2 + 1;
     const idx = String(i + 1);
@@ -198,6 +279,7 @@ export async function renderAttendancePdf(
       font: regular,
       color: ink ? BLACK : INK,
     });
+    if (marked) drawRowMarks(i, rows[i]!.student);
   }
 
   // Grid lines
@@ -208,6 +290,7 @@ export async function renderAttendancePdf(
   page.drawLine({ start: { x: left, y: tableTop }, end: { x: right, y: tableTop }, thickness: 1, color: gridColor });
   const vXs = [left, left + indexW, left + indexW + nameW];
   for (let c = 1; c <= dayList.length; c++) vXs.push(left + indexW + nameW + dayW * c);
+  if (marked) vXs.push(daysRight + TOTALS_W, right);
   for (const vx of vXs) {
     page.drawLine({
       start: { x: vx, y: tableTop },
@@ -217,7 +300,7 @@ export async function renderAttendancePdf(
     });
   }
 
-  return { bytes: await doc.save(), rows: rows.length, days: dayList.length, unrenderable };
+  return { bytes: await doc.save(), rows: rows.length, days: dayList.length, daysTaken, unrenderable };
 }
 
 // Lives in filenames.ts so components can name a download without pulling
