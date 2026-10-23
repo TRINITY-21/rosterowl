@@ -86,6 +86,45 @@ assert.equal((await page.locator('.att-tally').textContent()).trim(), '20 presen
 await page.goto(base + '/picker/', { waitUntil: 'networkidle' });
 await page.getByText('1 absent skipped').waitFor({ timeout: 10000 });
 
+// ---- A tab left open overnight must not file Thursday's taps under Wednesday ----
+await page.goto(base + '/attendance/', { waitUntil: 'networkidle' });
+await page.waitForSelector('.att-row');
+await page.clock.setFixedTime(new Date(2026, 9, 22, 8, 5)); // Thursday morning, no page events
+await page.locator('.att-row').nth(0).click(); // a tap on the stale "Wed · Today" panel
+await page.locator('.att-date').filter({ hasText: /22/ }).waitFor({ timeout: 5000 });
+assert.match(await page.locator('.att-date').textContent(), /22.*Today/, 'the panel moves to the new day');
+assert.equal(
+  await page.locator('.att-tally').count(),
+  0,
+  'Thursday is untaken: the stale tap must not have written anywhere'
+);
+await page.getByRole('button', { name: 'Previous school day' }).click();
+assert.equal(
+  (await page.locator('.att-tally').textContent()).trim(),
+  '20 present · 1 absent · 1 late',
+  "Wednesday's marks are untouched"
+);
+await page.getByRole('button', { name: 'Next school day' }).click();
+// Waking the tab (visibility) also refreshes the day, without any tap.
+await page.clock.setFixedTime(new Date(2026, 9, 23, 8, 0)); // Friday
+await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+await page.locator('.att-date').filter({ hasText: /23/ }).waitFor({ timeout: 5000 });
+
+// ---- Removing a student by mistake and pressing Undo keeps their attendance ----
+await page.goto(base + '/seating-chart/', { waitUntil: 'networkidle' });
+await page.getByRole('button', { name: 'Remove Grace' }).click({ force: true });
+await page.getByRole('button', { name: 'Undo' }).click();
+await page.goto(base + '/attendance/', { waitUntil: 'networkidle' });
+await page.waitForSelector('.att-row');
+await page.getByRole('button', { name: 'Previous school day' }).click(); // Thu 22
+await page.getByRole('button', { name: 'Previous school day' }).click(); // Wed 21
+assert.match(
+  await page.locator('.att-row').nth(0).getAttribute('aria-label'),
+  /^Adeyemi, Grace: Absent\./,
+  "Undo brings Grace back with Wednesday's absence"
+);
+assert.equal((await page.locator('.att-tally').textContent()).trim(), '20 present · 1 absent · 1 late');
+
 assert.deepEqual(errors, [], `browser console/page errors: ${errors.join('\n')}`);
 console.log(JSON.stringify({
   filename: first.download.suggestedFilename(),

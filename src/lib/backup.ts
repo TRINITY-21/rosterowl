@@ -2,8 +2,10 @@
 // PersistedState field by field so a restored file can never smuggle in
 // missing or malformed data that would crash the UI later.
 
+import { isDateKey, mergeAttendance } from './attendance';
 import type {
     AppSettings,
+    AttendanceDay,
     AttendanceLog,
     AttendanceMark,
     ClassData,
@@ -39,14 +41,14 @@ export function backupFilename(date: Date = new Date()): string {
 }
 
 /**
- * @param carryFrom the classes already in memory, when this document is about
- * to replace them. A class that arrives with no `attendance` field at all was
- * written by a build that predates attendance — a teacher's other device
- * that has not taken the update yet — and that build drops the field rather
- * than meaning to erase it. Such a class keeps the log from `carryFrom`. A
- * class that has the field, even an empty one, is taken exactly as written.
+ * @param mergeWith the classes already in memory, when this document is about
+ * to replace them. Attendance is the one part that is merged rather than
+ * replaced: each class's log is combined with the same class's log here, day
+ * by day, newer day winning (see mergeAttendance). A copy that lacks days —
+ * from a device that hasn't seen them, or from a build that predates
+ * attendance and drops the field — therefore never erases them.
  */
-export function parseBackup(json: string, carryFrom?: readonly ClassData[]): PersistedState {
+export function parseBackup(json: string, mergeWith?: readonly ClassData[]): PersistedState {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -67,7 +69,7 @@ export function parseBackup(json: string, carryFrom?: readonly ClassData[]): Per
 
   const rooms = candidate.rooms.map(cleanRoom);
   const classes = candidate.classes
-    .map((v) => cleanClass(v, carryFrom))
+    .map((v) => cleanClass(v, mergeWith))
     .map((cls) => sanitizeClass(cls, rooms));
   const classIds = new Set(classes.map((cls) => cls.id));
   const requested = typeof candidate.activeClassId === 'string' ? candidate.activeClassId : null;
@@ -187,30 +189,28 @@ function cleanWordLists(v: unknown): WordLists {
   };
 }
 
-/** A real calendar date written 'YYYY-MM-DD' — not merely that shape. */
-export function isDateKey(s: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (!m) return false;
-  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  const date = new Date(y, mo - 1, d);
-  return date.getFullYear() === y && date.getMonth() === mo - 1 && date.getDate() === d;
-}
-
 const MARKS: readonly AttendanceMark[] = ['absent', 'late'];
 
-// Always builds fresh objects, so a log carried over from live (reactive)
-// state is never shared with it.
+function cleanDay(v: Record<string, unknown>): AttendanceDay {
+  const at = typeof v.at === 'number' && Number.isFinite(v.at) && v.at >= 0 ? v.at : 0;
+  if (v.cleared === true) return { at, marks: {}, cleared: true };
+  const marks: Record<Id, AttendanceMark> = {};
+  if (isRecord(v.marks)) {
+    for (const [id, mark] of Object.entries(v.marks)) {
+      if (MARKS.includes(mark as AttendanceMark)) marks[id] = mark as AttendanceMark;
+    }
+  }
+  return { at, marks };
+}
+
+// Always builds fresh objects, so a log merged in from live (reactive) state
+// is never shared with it.
 function cleanAttendance(v: unknown): AttendanceLog {
   const rec = isRecord(v) ? v : {};
   const days: AttendanceLog['days'] = {};
   if (isRecord(rec.days)) {
-    for (const [date, marks] of Object.entries(rec.days)) {
-      if (!isDateKey(date) || !isRecord(marks)) continue;
-      const day: Record<Id, AttendanceMark> = {};
-      for (const [id, mark] of Object.entries(marks)) {
-        if (MARKS.includes(mark as AttendanceMark)) day[id] = mark as AttendanceMark;
-      }
-      days[date] = day;
+    for (const [date, day] of Object.entries(rec.days)) {
+      if (isDateKey(date) && isRecord(day)) days[date] = cleanDay(day);
     }
   }
   const joined: AttendanceLog['joined'] = {};
@@ -222,10 +222,13 @@ function cleanAttendance(v: unknown): AttendanceLog {
   return { days, joined };
 }
 
-function cleanClass(v: unknown, carryFrom?: readonly ClassData[]): ClassData {
+function cleanClass(v: unknown, mergeWith?: readonly ClassData[]): ClassData {
   if (!isRecord(v)) fail();
   if (!Array.isArray(v.students)) fail();
-  const carry = 'attendance' in v ? undefined : carryFrom?.find((c) => c.id === v.id);
+  // A class with no field at all was written by a build that predates
+  // attendance; it merges as an empty log rather than meaning "none".
+  const incoming = cleanAttendance(v.attendance);
+  const local = mergeWith?.find((c) => c.id === v.id);
   return {
     id: requireString(v.id),
     name: optionalString(v.name, ''),
@@ -240,7 +243,7 @@ function cleanClass(v: unknown, carryFrom?: readonly ClassData[]): ClassData {
       : [],
     jobs: cleanJobs(v.jobs),
     wordLists: cleanWordLists(v.wordLists),
-    attendance: cleanAttendance(carry ? carry.attendance : v.attendance),
+    attendance: local ? mergeAttendance(cleanAttendance(local.attendance), incoming) : incoming,
   };
 }
 
@@ -252,10 +255,14 @@ function sanitizeClass(cls: ClassData, rooms: Room[]): ClassData {
   for (const [deskId, studentId] of Object.entries(cls.seating)) {
     if (deskIds.has(deskId) && studentIds.has(studentId)) seating[deskId] = studentId;
   }
-  // A day whose marks all belonged to removed students stays a taken day.
+  // Marks for students no longer on the roster are dropped here, at the next
+  // parse, rather than when the student is removed — so Undo can bring a
+  // removed student back with their marks. A day whose marks all belonged to
+  // removed students stays a taken day.
   const days: AttendanceLog['days'] = {};
-  for (const [date, marks] of Object.entries(cls.attendance.days)) {
-    days[date] = Object.fromEntries(Object.entries(marks).filter(([id]) => studentIds.has(id)));
+  for (const [date, day] of Object.entries(cls.attendance.days)) {
+    const marks = Object.fromEntries(Object.entries(day.marks).filter(([id]) => studentIds.has(id)));
+    days[date] = day.cleared ? { at: day.at, marks: {}, cleared: true } : { at: day.at, marks };
   }
   const joined = Object.fromEntries(
     Object.entries(cls.attendance.joined).filter(([id]) => studentIds.has(id)),

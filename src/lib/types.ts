@@ -74,12 +74,24 @@ export interface WordLists {
 export type AttendanceMark = 'absent' | 'late';
 
 /**
- * Daily attendance for one class. A date key being present means attendance
- * was taken that day; enrolled students not listed in it were present.
+ * One day's attendance. Enrolled students not in `marks` were present.
+ *
+ * `at` is when the day last changed (Date.now() on the device that changed
+ * it). Two devices' logs are merged day by day and the newer day wins, so a
+ * device that hasn't seen a day — or runs a build that predates attendance —
+ * can never erase it. Clearing a day keeps a `cleared` tombstone so the clear
+ * itself reaches the other devices.
  */
+export interface AttendanceDay {
+  at: number;
+  marks: Record<Id, AttendanceMark>;
+  cleared?: true;
+}
+
+/** Daily attendance for one class. */
 export interface AttendanceLog {
-  /** Device-local date 'YYYY-MM-DD' -> that day's absent/late marks. */
-  days: Record<string, Record<Id, AttendanceMark>>;
+  /** Device-local date 'YYYY-MM-DD' -> that day. */
+  days: Record<string, AttendanceDay>;
   /**
    * Student id -> the first date they count from, for students added after
    * attendance had started. Missing = on the roster from the beginning.

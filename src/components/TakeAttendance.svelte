@@ -1,14 +1,28 @@
 <!-- Take attendance for one school day: tap a name to cycle Present → Absent → Late. -->
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
-  import { dateKey, dayState, flaggedNotMarked, stepSchoolDay, tally } from '../lib/attendance';
+  import { dateKey, dayState, flaggedNotMarked, parseDateKey, stepSchoolDay, tally } from '../lib/attendance';
   import type { DayState } from '../lib/attendance';
   import { confirmDialog } from '../lib/dialog.svelte';
   import { orderedNames } from '../lib/names';
   import type { NameOrder } from '../lib/names';
   import Icon from './Icon.svelte';
 
-  let { day, nameOrder, onday }: { day: Date; nameOrder: NameOrder; onday: (d: Date) => void } = $props();
+  let {
+    day,
+    today,
+    nameOrder,
+    onday,
+    onstale,
+  }: {
+    day: Date;
+    /** Today's date key, kept live by the parent. */
+    today: string;
+    nameOrder: NameOrder;
+    onday: (d: Date) => void;
+    /** The date rolled over since this panel was drawn: refresh it. */
+    onstale: () => void;
+  } = $props();
 
   const CHIP: Record<DayState, string> = {
     present: 'Present',
@@ -19,18 +33,27 @@
 
   const cls = $derived(app.activeClass);
   const key = $derived(dateKey(day));
-  const isToday = $derived(key === dateKey(new Date()));
+  const isToday = $derived(key === today);
+  const todayDate = $derived(parseDateKey(today)!);
   const dayLabel = $derived(
     day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
   );
-  const prev = $derived(stepSchoolDay(day, -1, new Date()));
-  const next = $derived(stepSchoolDay(day, 1, new Date()));
+  const prev = $derived(stepSchoolDay(day, -1, todayDate));
+  const next = $derived(stepSchoolDay(day, 1, todayDate));
   const rows = $derived(cls ? orderedNames(cls.students, nameOrder) : []);
   const counts = $derived(cls ? tally(cls.attendance, key, cls.students) : null);
   // Only today has an "absent today" flag to reconcile with.
   const flagged = $derived(cls && isToday ? flaggedNotMarked(cls, key) : []);
 
+  // A tap on a panel drawn before midnight would land on the wrong day under a
+  // "Today" label. Refresh instead; the teacher sees the new date and taps again.
+  function act(fn: () => void) {
+    if (dateKey(new Date()) !== today) onstale();
+    else fn();
+  }
+
   async function clear() {
+    if (dateKey(new Date()) !== today) return onstale();
     const ok = await confirmDialog({
       title: `Clear attendance for ${dayLabel}?`,
       message: 'The marks for this day are removed. Other days are untouched.',
@@ -75,7 +98,7 @@
           Flagged absent in your other tools:
           {flagged.map((s) => `${s.first} ${s.last}`.trim()).join(', ')}
         </span>
-        <button type="button" class="btn small" onclick={() => app.markFlaggedAbsentToday(key)}>
+        <button type="button" class="btn small" onclick={() => act(() => app.markFlaggedAbsentToday(key))}>
           Mark them absent
         </button>
       </p>
@@ -90,7 +113,7 @@
             class="att-row"
             data-state={state}
             aria-label="{row.label}: {CHIP[state]}. Tap to change."
-            onclick={() => app.tapAttendance(key, row.student.id)}
+            onclick={() => act(() => app.tapAttendance(key, row.student.id))}
           >
             <span class="att-name">{row.label}</span>
             <span class="att-chip">{CHIP[state]}</span>
@@ -107,7 +130,7 @@
         <button type="button" class="btn quiet small" onclick={clear}>Clear this day</button>
       {:else}
         <span class="att-note">Not taken yet — tap anyone absent or late, or</span>
-        <button type="button" class="btn small" onclick={() => app.markEveryonePresent(key)}>
+        <button type="button" class="btn small" onclick={() => act(() => app.markEveryonePresent(key))}>
           Everyone's here
         </button>
       {/if}

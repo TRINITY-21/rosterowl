@@ -9,7 +9,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import type { AttendanceLog, PdfFonts, Student } from './types';
 import type { NameOrder } from './pdfChecklist';
 import { orderedNames } from './pdfChecklist';
-import { dateKey, dayState, monthTotals, schoolDays } from './attendance';
+import { dateKey, dayState, isTaken, monthTotals, schoolDays } from './attendance';
 
 // Moved to attendance.ts (no pdf-lib there); re-exported for existing callers.
 export { schoolDays } from './attendance';
@@ -220,7 +220,7 @@ export async function renderAttendancePdf(
     const cellBottom = tableTop - headerH - rowH * (i + 1);
     for (let c = 0; c < dayKeys.length; c++) {
       const key = dayKeys[c]!;
-      if (!(key in log!.days)) continue;
+      if (!isTaken(log!, key)) continue;
       const state = dayState(log!, key, student.id);
       const x0 = left + indexW + nameW + dayW * c;
       if (state === 'present') {

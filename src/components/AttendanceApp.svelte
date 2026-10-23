@@ -3,7 +3,7 @@
   import { app } from '../lib/appState.svelte';
   import { createPdfPreview } from '../lib/pdfPreview.svelte';
   import type { NameOrder } from '../lib/names';
-  import { defaultMarkingDay, printMonths } from '../lib/attendance';
+  import { dateKey, defaultMarkingDay, parseDateKey, printMonths } from '../lib/attendance';
   import { emptyAttendance } from '../lib/types';
   import TakeAttendance from './TakeAttendance.svelte';
   import ConfirmDialog from './ConfirmDialog.svelte';
@@ -29,13 +29,39 @@
   // month with it, so the preview always shows the marks being made.
   let markingDay = $state(defaultMarkingDay(now));
 
+  // Today, kept live: an iPad can keep this tab open for days. When the date
+  // rolls over, a panel still on the old default day follows it to the new one.
+  let todayKey = $state(dateKey(now));
+  function refreshToday() {
+    const nowKey = dateKey(new Date());
+    if (nowKey === todayKey) return;
+    const onDefault = dateKey(markingDay) === dateKey(defaultMarkingDay(parseDateKey(todayKey)!));
+    todayKey = nowKey;
+    if (onDefault) setMarkingDay(defaultMarkingDay(new Date()));
+  }
+  $effect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshToday();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', refreshToday);
+    window.addEventListener('pageshow', refreshToday);
+    const tick = setInterval(refreshToday, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', refreshToday);
+      window.removeEventListener('pageshow', refreshToday);
+      clearInterval(tick);
+    };
+  });
+
   let pasteMode = $state<'new' | 'add' | null>(null);
   let monthKey = $state(keyOf(markingDay));
 
   // Months with taken days, the month being marked, and this month plus the
   // next 11 — the value carries year + 0-based month.
   const monthOptions = $derived(
-    printMonths(now, app.activeClass?.attendance ?? emptyAttendance(), markingDay).map(({ year, month }) => {
+    printMonths(parseDateKey(todayKey)!, app.activeClass?.attendance ?? emptyAttendance(), markingDay).map(({ year, month }) => {
       const d = new Date(year, month, 1);
       return { key: keyOf(d), label: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) };
     }),
@@ -180,7 +206,7 @@
   {:else}
     <div class="print-grid">
       <div class="print-options">
-        <TakeAttendance day={markingDay} {nameOrder} onday={setMarkingDay} />
+        <TakeAttendance day={markingDay} today={todayKey} {nameOrder} onday={setMarkingDay} onstale={refreshToday} />
         <label class="print-opt">
           Month
           <select bind:value={monthKey}>

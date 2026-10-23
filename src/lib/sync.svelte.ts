@@ -237,11 +237,24 @@ class Sync {
       if (!response.ok) throw new Error(String(response.status));
 
       const body = (await response.json()) as { rev: number; doc: unknown; device: string | null };
-      const local = app.snapshot();
-      const localMark = fingerprint(local);
+      let local = app.snapshot();
+      let localMark = fingerprint(local);
 
       if (this.#memory.rev === body.rev) {
-        // Already in step. Push only if this device has moved on since.
+        // Already in step — but this device's copy can still lack attendance
+        // days the server has: an older build drops the field when it saves,
+        // so a device that ran one before updating has a stripped copy.
+        // Merge the server's days in before anything is pushed over them.
+        const server = this.#validate(body.doc);
+        if (!server) throw new Error('unreadable document from server');
+        const merged = parseBackup(JSON.stringify(local), server.classes);
+        if (fingerprint(merged) !== localMark) {
+          app.adoptState(merged);
+          app.saveNow();
+          local = app.snapshot();
+          localMark = fingerprint(local);
+        }
+        // Push only if this device has moved on since.
         this.status = 'idle';
         if (localMark !== this.#memory.mark) {
           this.#inFlight = false;
@@ -318,7 +331,9 @@ class Sync {
         // Another device wrote first. Keep this device's work as a version, take
         // theirs, and let the teacher choose which one they meant.
         const body = (await response.json()) as { rev: number; doc: unknown; device: string | null };
-        const remote = this.#validate(body.doc, state.classes);
+        // Merge with the document as it is now, not as it was sent: taps made
+        // during the round trip belong in the merged log too.
+        const remote = this.#validate(body.doc, app.snapshot().classes);
         const asStored = this.#validate(body.doc);
         if (!remote || !asStored) throw new Error('unreadable document from server');
         app.captureVersion('safety', `From this device — before ${body.device ?? 'another device'} synced`);
@@ -379,9 +394,9 @@ class Sync {
    * that a restored backup file does, so a malformed or hostile document cannot
    * reach the UI. It is the reason the server can treat the blob as opaque.
    */
-  #validate(doc: unknown, carryFrom?: PersistedState['classes']): PersistedState | null {
+  #validate(doc: unknown, mergeWith?: PersistedState['classes']): PersistedState | null {
     try {
-      return parseBackup(JSON.stringify(doc), carryFrom);
+      return parseBackup(JSON.stringify(doc), mergeWith);
     } catch {
       return null;
     }

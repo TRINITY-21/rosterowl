@@ -77,6 +77,26 @@ export function persistVersions(versions: VersionEntry[]): VersionEntry[] {
   }
 }
 
+/**
+ * Run a storage write that must not fail — the live document — dropping the
+ * oldest version-history entries (automatic ones first) until it fits.
+ * Returns the history still stored. Throws only when even an empty history
+ * leaves no room. Without this, a full history made every save of the live
+ * document fail while the teacher kept working.
+ */
+export function saveMakingRoom(write: () => void, versions: VersionEntry[]): VersionEntry[] {
+  let list = versions;
+  for (;;) {
+    try {
+      write();
+      return list;
+    } catch (error) {
+      if (list.length === 0) throw error;
+      list = persistVersions(dropOne(list));
+    }
+  }
+}
+
 /** Newest-first insert + cap. Auto snapshots are evicted before named ones. */
 export function pushVersion(versions: VersionEntry[], entry: VersionEntry): VersionEntry[] {
   let list = [entry, ...versions];

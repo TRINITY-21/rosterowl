@@ -5,9 +5,10 @@ import {
   dayState,
   defaultMarkingDay,
   flaggedNotMarked,
-  forgetStudent,
+  isTaken,
   markAllPresent,
   markFlaggedAbsent,
+  mergeAttendance,
   monthTotals,
   noteNewStudents,
   parseDateKey,
@@ -20,6 +21,7 @@ import type { AttendanceLog, ClassData, Student } from '../src/lib/types';
 import { emptyAttendance, emptyJobs, emptyWordLists } from '../src/lib/types';
 
 const TODAY = '2026-10-21'; // a Wednesday
+const NOW = 1_000; // Date.now() stand-in: when a day was last changed
 
 const stu = (id: string): Student => ({ id, first: id.toUpperCase(), last: '', absent: false, zonePref: null });
 
@@ -75,26 +77,26 @@ describe('tapStudent', () => {
   it('cycles present → absent → late → present and records the day on first tap', () => {
     const c = cls();
     expect(c.attendance.days[TODAY]).toBeUndefined();
-    expect(tapStudent(c, TODAY, 'a', TODAY)).toBe('absent');
-    expect(c.attendance.days[TODAY]).toEqual({ a: 'absent' });
-    expect(tapStudent(c, TODAY, 'a', TODAY)).toBe('late');
-    expect(tapStudent(c, TODAY, 'a', TODAY)).toBe('present');
-    expect(c.attendance.days[TODAY]).toEqual({});
+    expect(tapStudent(c, TODAY, 'a', TODAY, NOW)).toBe('absent');
+    expect(c.attendance.days[TODAY]).toEqual({ at: NOW, marks: { a: 'absent' } });
+    expect(tapStudent(c, TODAY, 'a', TODAY, NOW + 1)).toBe('late');
+    expect(tapStudent(c, TODAY, 'a', TODAY, NOW + 2)).toBe('present');
+    expect(c.attendance.days[TODAY]).toEqual({ at: NOW + 2, marks: {} });
     expect(dayState(c.attendance, TODAY, 'b')).toBe('present');
   });
 
   it('links the absent-today flag only when the day is today, and only for the tapped student', () => {
     const c = cls();
     student(c, 'b').absent = true; // flagged earlier in another tool
-    tapStudent(c, TODAY, 'a', TODAY);
+    tapStudent(c, TODAY, 'a', TODAY, NOW);
     expect(student(c, 'a').absent).toBe(true);
-    tapStudent(c, TODAY, 'a', TODAY); // late counts as present
+    tapStudent(c, TODAY, 'a', TODAY, NOW); // late counts as present
     expect(student(c, 'a').absent).toBe(false);
-    tapStudent(c, TODAY, 'c', TODAY);
+    tapStudent(c, TODAY, 'c', TODAY, NOW);
     expect(student(c, 'b').absent).toBe(true);
     student(c, 'a').absent = false;
-    tapStudent(c, '2026-10-20', 'a', TODAY);
-    expect(c.attendance.days['2026-10-20']).toEqual({ a: 'absent' });
+    tapStudent(c, '2026-10-20', 'a', TODAY, NOW);
+    expect(c.attendance.days['2026-10-20']).toEqual({ at: NOW, marks: { a: 'absent' } });
     expect(student(c, 'a').absent).toBe(false);
   });
 
@@ -102,9 +104,20 @@ describe('tapStudent', () => {
     const c = cls();
     c.attendance.joined.c = '2026-10-21';
     expect(dayState(c.attendance, '2026-10-19', 'c')).toBe('not-enrolled');
-    expect(tapStudent(c, '2026-10-19', 'c', TODAY)).toBe('present');
+    expect(tapStudent(c, '2026-10-19', 'c', TODAY, NOW)).toBe('present');
     expect(c.attendance.joined.c).toBe('2026-10-19');
-    expect(c.attendance.days['2026-10-19']).toEqual({});
+    // Correcting a join date is not taking attendance: an untaken day stays
+    // untaken, so the register doesn't print the whole class present.
+    expect(c.attendance.days['2026-10-19']).toBeUndefined();
+  });
+
+  it('re-marking a cleared day takes it again', () => {
+    const c = cls();
+    tapStudent(c, TODAY, 'a', TODAY, NOW);
+    clearDay(c, TODAY, NOW + 1);
+    expect(isTaken(c.attendance, TODAY)).toBe(false);
+    tapStudent(c, TODAY, 'b', TODAY, NOW + 2);
+    expect(c.attendance.days[TODAY]).toEqual({ at: NOW + 2, marks: { b: 'absent' } });
   });
 });
 
@@ -112,11 +125,11 @@ describe('day actions', () => {
   it('markAllPresent records an empty day and clears today flags', () => {
     const c = cls();
     student(c, 'a').absent = true;
-    markAllPresent(c, '2026-10-20', TODAY);
-    expect(c.attendance.days['2026-10-20']).toEqual({});
+    markAllPresent(c, '2026-10-20', TODAY, NOW);
+    expect(c.attendance.days['2026-10-20']).toEqual({ at: NOW, marks: {} });
     expect(student(c, 'a').absent).toBe(true); // a past day leaves flags alone
-    markAllPresent(c, TODAY, TODAY);
-    expect(c.attendance.days[TODAY]).toEqual({});
+    markAllPresent(c, TODAY, TODAY, NOW);
+    expect(c.attendance.days[TODAY]).toEqual({ at: NOW, marks: {} });
     expect(c.students.every((s) => !s.absent)).toBe(true);
   });
 
@@ -124,25 +137,32 @@ describe('day actions', () => {
     const c = cls();
     student(c, 'a').absent = true;
     student(c, 'b').absent = true;
-    tapStudent(c, TODAY, 'b', TODAY); // b now marked absent
+    tapStudent(c, TODAY, 'b', TODAY, NOW); // b now marked absent
     expect(flaggedNotMarked(c, TODAY).map((s) => s.id)).toEqual(['a']);
-    markFlaggedAbsent(c, TODAY, TODAY);
-    expect(c.attendance.days[TODAY]).toEqual({ a: 'absent', b: 'absent' });
+    markFlaggedAbsent(c, TODAY, TODAY, NOW + 1);
+    expect(c.attendance.days[TODAY]).toEqual({ at: NOW + 1, marks: { a: 'absent', b: 'absent' } });
     expect(flaggedNotMarked(c, TODAY)).toEqual([]);
   });
 
-  it('clearDay removes only that day', () => {
+  it('clearDay leaves a dated tombstone for only that day, so the clear can reach other devices', () => {
     const c = cls();
-    tapStudent(c, '2026-10-20', 'a', TODAY);
-    tapStudent(c, TODAY, 'b', TODAY);
-    clearDay(c, TODAY);
-    expect(c.attendance.days).toEqual({ '2026-10-20': { a: 'absent' } });
+    tapStudent(c, '2026-10-20', 'a', TODAY, NOW);
+    tapStudent(c, TODAY, 'b', TODAY, NOW);
+    clearDay(c, TODAY, NOW + 5);
+    expect(c.attendance.days).toEqual({
+      '2026-10-20': { at: NOW, marks: { a: 'absent' } },
+      [TODAY]: { at: NOW + 5, marks: {}, cleared: true },
+    });
+    expect(isTaken(c.attendance, TODAY)).toBe(false);
+    expect(tally(c.attendance, TODAY, c.students).taken).toBe(false);
+    clearDay(c, '2026-10-19', NOW + 6); // never taken: nothing to clear
+    expect(c.attendance.days['2026-10-19']).toBeUndefined();
   });
 });
 
 describe('tally and totals', () => {
   it('tally counts enrolled students only', () => {
-    const log: AttendanceLog = { days: { [TODAY]: { a: 'late' } }, joined: { c: '2026-10-22' } };
+    const log: AttendanceLog = { days: { [TODAY]: { at: 1, marks: { a: 'late' } } }, joined: { c: '2026-10-22' } };
     const t = tally(log, TODAY, [stu('a'), stu('b'), stu('c')]);
     expect(t).toEqual({ taken: true, present: 1, absent: 0, late: 1 });
     expect(tally(log, '2026-10-20', [stu('a')]).taken).toBe(false);
@@ -151,10 +171,11 @@ describe('tally and totals', () => {
   it('monthTotals counts taken school days of that month only, skipping days before a student joined and ids not on the roster', () => {
     const log: AttendanceLog = {
       days: {
-        '2026-09-30': { a: 'absent' },
-        '2026-10-01': { a: 'absent', c: 'absent', ghost: 'late' },
-        '2026-10-02': { a: 'late', c: 'late' },
-        '2026-10-05': {},
+        '2026-09-30': { at: 1, marks: { a: 'absent' } },
+        '2026-10-01': { at: 1, marks: { a: 'absent', c: 'absent', ghost: 'late' } },
+        '2026-10-02': { at: 1, marks: { a: 'late', c: 'late' } },
+        '2026-10-05': { at: 1, marks: {} },
+        '2026-10-06': { at: 2, marks: {}, cleared: true },
       },
       joined: { c: '2026-10-02' },
     };
@@ -173,24 +194,25 @@ describe('roster changes', () => {
     const log = emptyAttendance();
     noteNewStudents(log, ['d'], TODAY);
     expect(log.joined).toEqual({});
-    log.days['2026-10-20'] = {};
+    log.days['2026-10-19'] = { at: 1, marks: {}, cleared: true };
+    noteNewStudents(log, ['d'], TODAY); // a cleared day was never taken
+    expect(log.joined).toEqual({});
+    log.days['2026-10-20'] = { at: 1, marks: {} };
     noteNewStudents(log, ['e'], TODAY);
     expect(log.joined).toEqual({ e: TODAY });
-  });
-
-  it('forgetStudent removes marks and joined', () => {
-    const log: AttendanceLog = {
-      days: { '2026-10-20': { a: 'absent', b: 'late' }, [TODAY]: { a: 'late' } },
-      joined: { a: '2026-10-19' },
-    };
-    forgetStudent(log, 'a');
-    expect(log).toEqual({ days: { '2026-10-20': { b: 'late' }, [TODAY]: {} }, joined: {} });
   });
 });
 
 describe('printMonths', () => {
   it('lists months with marks, the included month, this month and the next 11, in order, once each', () => {
-    const log = { days: { '2026-09-14': {}, '2026-10-01': { a: 'absent' } }, joined: {} } as AttendanceLog;
+    const log: AttendanceLog = {
+      days: {
+        '2026-06-02': { at: 1, marks: {}, cleared: true }, // cleared: no longer a month with marks
+        '2026-09-14': { at: 1, marks: {} },
+        '2026-10-01': { at: 1, marks: { a: 'absent' } },
+      },
+      joined: {},
+    };
     const m = printMonths(new Date(2026, 9, 21), log, new Date(2026, 7, 20));
     expect(m.slice(0, 3)).toEqual([
       { year: 2026, month: 7 },
@@ -199,5 +221,47 @@ describe('printMonths', () => {
     ]);
     expect(m.at(-1)).toEqual({ year: 2027, month: 8 });
     expect(m).toHaveLength(14);
+  });
+});
+
+describe('mergeAttendance', () => {
+  const log = (days: AttendanceLog['days'], joined: AttendanceLog['joined'] = {}): AttendanceLog => ({ days, joined });
+
+  it('keeps every day either side has', () => {
+    const merged = mergeAttendance(
+      log({ '2026-10-19': { at: 1, marks: { a: 'absent' } } }),
+      log({ '2026-10-20': { at: 2, marks: {} } }),
+    );
+    expect(Object.keys(merged.days).sort()).toEqual(['2026-10-19', '2026-10-20']);
+  });
+
+  it('takes the newer version of a day, a clear included, and the incoming one on a tie', () => {
+    const mine = log({
+      '2026-10-19': { at: 5, marks: { a: 'absent' } },
+      '2026-10-20': { at: 5, marks: { a: 'absent' } },
+      '2026-10-21': { at: 5, marks: { a: 'absent' } },
+    });
+    const theirs = log({
+      '2026-10-19': { at: 3, marks: { b: 'late' } },
+      '2026-10-20': { at: 9, marks: {}, cleared: true },
+      '2026-10-21': { at: 5, marks: { c: 'late' } },
+    });
+    expect(mergeAttendance(mine, theirs).days).toEqual({
+      '2026-10-19': { at: 5, marks: { a: 'absent' } },
+      '2026-10-20': { at: 9, marks: {}, cleared: true },
+      '2026-10-21': { at: 5, marks: { c: 'late' } },
+    });
+  });
+
+  it('keeps the earliest join date for a student', () => {
+    const merged = mergeAttendance(log({}, { a: '2026-10-15', b: '2026-10-02' }), log({}, { a: '2026-10-13', c: '2026-10-20' }));
+    expect(merged.joined).toEqual({ a: '2026-10-13', b: '2026-10-02', c: '2026-10-20' });
+  });
+
+  it('builds fresh objects', () => {
+    const mine = log({ '2026-10-19': { at: 5, marks: { a: 'absent' } } });
+    const merged = mergeAttendance(mine, log({}));
+    merged.days['2026-10-19']!.marks.a = 'late';
+    expect(mine.days['2026-10-19']!.marks.a).toBe('absent');
   });
 });

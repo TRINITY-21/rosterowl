@@ -161,7 +161,10 @@ describe('renderAttendancePdf with a log', () => {
   const oct: AttendanceOptions = { ...baseOpts, month: 9 }; // October 2026: 22 school days
 
   it('leaves an untaken month exactly as the blank register', async () => {
-    const other: AttendanceLog = { days: { '2026-09-30': { a: 'absent' } }, joined: {} };
+    const other: AttendanceLog = {
+      days: { '2026-09-30': { at: 1, marks: { a: 'absent' } }, '2026-10-07': { at: 2, marks: {}, cleared: true } },
+      joined: {},
+    };
     const plain = await renderAttendancePdf(roster, oct, fonts);
     const withLog = await renderAttendancePdf(roster, oct, fonts, other);
     expect(withLog.daysTaken).toBe(0);
@@ -171,7 +174,12 @@ describe('renderAttendancePdf with a log', () => {
 
   it('prints A and L on taken days, the totals headers and the taken-days line', async () => {
     const log: AttendanceLog = {
-      days: { '2026-10-01': { b: 'absent' }, '2026-10-02': { b: 'absent', c: 'late' }, '2026-10-05': {} },
+      days: {
+        '2026-10-01': { at: 1, marks: { b: 'absent' } },
+        '2026-10-02': { at: 1, marks: { b: 'absent', c: 'late' } },
+        '2026-10-05': { at: 1, marks: {} },
+        '2026-10-06': { at: 2, marks: { a: 'absent' }, cleared: true },
+      },
       joined: {},
     };
     const r = await renderAttendancePdf(roster, oct, fonts, log);
@@ -188,7 +196,10 @@ describe('renderAttendancePdf with a log', () => {
       const days: AttendanceLog['days'] = {};
       for (const { day } of schoolDays(2026, 9)) {
         const key = `2026-10-${String(day).padStart(2, '0')}`;
-        days[key] = Object.fromEntries(big.filter((_, i) => i % 2 === 0).map((s) => [s.id, 'absent' as const]));
+        days[key] = {
+          at: 1,
+          marks: Object.fromEntries(big.filter((_, i) => i % 2 === 0).map((s) => [s.id, 'absent' as const])),
+        };
       }
       const r = await renderAttendancePdf(big, { ...oct, orientation }, fonts, { days, joined: {} });
       expect(r.daysTaken).toBe(22);
@@ -197,7 +208,10 @@ describe('renderAttendancePdf with a log', () => {
   });
 
   it('renders marks in ink-saver portrait without throwing', async () => {
-    const log: AttendanceLog = { days: { '2026-10-01': { a: 'absent', c: 'late' } }, joined: { d: '2026-10-02' } };
+    const log: AttendanceLog = {
+      days: { '2026-10-01': { at: 1, marks: { a: 'absent', c: 'late' } } },
+      joined: { d: '2026-10-02' },
+    };
     const r = await renderAttendancePdf(roster, { ...oct, inkSaver: true, orientation: 'portrait' }, fonts, log);
     expect((await PDFDocument.load(r.bytes)).getPageCount()).toBe(1);
     expect((await pdfText(r.bytes)).filter((s) => s === 'A')).toHaveLength(1);

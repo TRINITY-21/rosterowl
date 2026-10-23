@@ -129,11 +129,58 @@ describe('parseBackup normalises, which is why sync marks are computed after it'
 describe('a device still on the pre-attendance build', () => {
   it('cannot erase the log, and the adopting device differs from the server so it pushes the log back', () => {
     const local = stateWith(['Period 2']);
-    local.classes[0]!.attendance.days['2026-10-21'] = { 's-0': 'absent' };
+    local.classes[0]!.attendance.days['2026-10-21'] = { at: 100, marks: { 's-0': 'absent' } };
     const stripped = JSON.parse(JSON.stringify(local));
     delete stripped.classes[0].attendance;
     const adopted = parseBackup(JSON.stringify(stripped), local.classes);
     expect(adopted.classes[0]!.attendance).toEqual(local.classes[0]!.attendance);
     expect(fingerprint(adopted)).not.toBe(fingerprint(parseBackup(JSON.stringify(stripped))));
+  });
+
+  // The rollout order that wiped logs in review: device B opens on the old
+  // build (which strips the log and saves that), then takes the update. Its
+  // first pull is "in step", and its push used to replace the server's log
+  // with an empty one that device A then adopted as written.
+  it('survives the update order: B updates, pushes, A pulls — the log is intact everywhere', () => {
+    const a = stateWith(['Period 2']);
+    a.classes[0]!.attendance.days['2026-10-21'] = { at: 100, marks: { 's-0': 'absent' } };
+    const serverRevN = JSON.parse(JSON.stringify(a));
+    const strippedByOldB = JSON.parse(JSON.stringify(a));
+    delete strippedByOldB.classes[0].attendance;
+    const bAfterUpdate = parseBackup(JSON.stringify(strippedByOldB)); // load(): nothing to merge with
+    expect(bAfterUpdate.classes[0]!.attendance.days).toEqual({});
+    // In-step pull: the server's log is merged into B's own document first.
+    const bPushes = parseBackup(JSON.stringify(bAfterUpdate), parseBackup(JSON.stringify(serverRevN)).classes);
+    expect(bPushes.classes[0]!.attendance).toEqual(a.classes[0]!.attendance);
+    // And even a B that pushed its empty log can't erase A's copy.
+    const aPulls = parseBackup(JSON.stringify(bAfterUpdate), a.classes);
+    expect(aPulls.classes[0]!.attendance).toEqual(a.classes[0]!.attendance);
+  });
+
+  it('a device that marks before it has the log adds to it instead of replacing it', () => {
+    const a = stateWith(['Period 2']);
+    a.classes[0]!.attendance.days['2026-10-19'] = { at: 100, marks: { 's-0': 'absent' } };
+    const b = stateWith(['Period 2']);
+    b.classes[0]!.attendance.days['2026-10-22'] = { at: 200, marks: {} };
+    const aPulls = parseBackup(JSON.stringify(b), a.classes);
+    expect(Object.keys(aPulls.classes[0]!.attendance.days).sort()).toEqual(['2026-10-19', '2026-10-22']);
+  });
+
+  it('a stale device cannot roll back newer days, and a clear still reaches it', () => {
+    const c = stateWith(['Period 2']);
+    c.classes[0]!.attendance.days = {
+      '2026-10-19': { at: 1, marks: {} },
+      '2026-10-20': { at: 5, marks: { 's-0': 'late' } },
+      '2026-10-21': { at: 9, marks: {}, cleared: true },
+    };
+    const staleA = stateWith(['Period 2']);
+    staleA.classes[0]!.attendance.days = {
+      '2026-10-19': { at: 1, marks: {} },
+      '2026-10-21': { at: 4, marks: { 's-0': 'absent' } },
+    };
+    const cPulls = parseBackup(JSON.stringify(staleA), c.classes);
+    expect(cPulls.classes[0]!.attendance.days).toEqual(c.classes[0]!.attendance.days);
+    const aPulls = parseBackup(JSON.stringify(c), staleA.classes);
+    expect(aPulls.classes[0]!.attendance.days['2026-10-21']).toEqual({ at: 9, marks: {}, cleared: true });
   });
 });

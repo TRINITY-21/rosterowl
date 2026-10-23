@@ -5,7 +5,6 @@
 import {
   clearDay,
   dateKey,
-  forgetStudent,
   markAllPresent,
   markFlaggedAbsent,
   noteNewStudents,
@@ -42,6 +41,7 @@ import {
     loadVersions,
     persistVersions,
     pushVersion,
+    saveMakingRoom,
     summarize,
     type VersionEntry,
     type VersionKind,
@@ -273,7 +273,11 @@ class AppState {
       window.addEventListener('storage', (e) => {
         if (e.key !== STORAGE_KEY || !e.newValue) return;
         try {
-          this.adoptState(parseBackup(e.newValue, $state.snapshot(this.classes)));
+          const merged = parseBackup(e.newValue, $state.snapshot(this.classes));
+          this.adoptState(merged);
+          // The other tab already saved its copy; save again only if merging
+          // kept attendance days that copy lacked (it ran an older build).
+          if (fingerprint(merged) !== fingerprint(parseBackup(e.newValue))) this.scheduleSave();
         } catch {
           /* ignore malformed writes from other tabs */
         }
@@ -330,7 +334,10 @@ class AppState {
   saveNow() {
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.snapshot()));
+        const json = JSON.stringify(this.snapshot());
+        // The live document outranks its own history: when storage is full,
+        // old versions make room rather than the save failing.
+        this.versions = saveMakingRoom(() => localStorage.setItem(STORAGE_KEY, json), this.versions);
       }
     } catch {
       this.toast('Could not save to this browser — save a backup file to be safe.', 'warn');
@@ -550,7 +557,9 @@ class AppState {
     cls.apart = cls.apart.filter((p) => p.a !== id && p.b !== id);
     cls.together = cls.together.filter((p) => p.a !== id && p.b !== id);
     cls.pickerHistory = cls.pickerHistory.filter((h) => h !== id);
-    forgetStudent(cls.attendance, id);
+    // Attendance marks are left in place: tally and totals only read students
+    // on the roster, parseBackup drops strays at the next load, and keeping
+    // them lets Undo restore the student with their history intact.
     syncWheel(cls.jobs, cls.students);
     if (this.selectedStudentId === id) this.selectedStudentId = null;
     this.refreshConflicts();
@@ -572,7 +581,7 @@ class AppState {
   tapAttendance(date: string, id: Id) {
     const cls = this.activeClass;
     if (!cls) return;
-    tapStudent(cls, date, id, dateKey(new Date()));
+    tapStudent(cls, date, id, dateKey(new Date()), Date.now());
     this.refreshConflicts();
     this.scheduleSave();
   }
@@ -580,7 +589,7 @@ class AppState {
   markEveryonePresent(date: string) {
     const cls = this.activeClass;
     if (!cls) return;
-    markAllPresent(cls, date, dateKey(new Date()));
+    markAllPresent(cls, date, dateKey(new Date()), Date.now());
     this.refreshConflicts();
     this.scheduleSave();
   }
@@ -588,7 +597,7 @@ class AppState {
   markFlaggedAbsentToday(date: string) {
     const cls = this.activeClass;
     if (!cls) return;
-    markFlaggedAbsent(cls, date, dateKey(new Date()));
+    markFlaggedAbsent(cls, date, dateKey(new Date()), Date.now());
     this.refreshConflicts();
     this.scheduleSave();
   }
@@ -596,7 +605,7 @@ class AppState {
   clearAttendanceDay(date: string) {
     const cls = this.activeClass;
     if (!cls) return;
-    clearDay(cls, date);
+    clearDay(cls, date, Date.now());
     this.scheduleSave();
   }
 

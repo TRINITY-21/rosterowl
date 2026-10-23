@@ -237,7 +237,13 @@ describe('parseBackup', () => {
 describe('attendance log', () => {
   it('round-trips a log through a backup file', () => {
     const s = fullState();
-    s.classes[0]!.attendance = { days: { '2026-10-21': { s2: 'absent' } }, joined: { s1: '2026-10-05' } };
+    s.classes[0]!.attendance = {
+      days: {
+        '2026-10-21': { at: 7, marks: { s2: 'absent' } },
+        '2026-10-22': { at: 8, marks: {}, cleared: true },
+      },
+      joined: { s1: '2026-10-05' },
+    };
     expect(parseBackup(serializeBackup(s)).classes[0]!.attendance).toEqual(s.classes[0]!.attendance);
   });
 
@@ -251,35 +257,44 @@ describe('attendance log', () => {
     const raw = JSON.parse(JSON.stringify(fullState()));
     raw.classes[0].attendance = {
       days: {
-        '2026-02-30': { s1: 'absent' },
-        yesterday: {},
-        '2026-10-21': { s1: 'present', s2: 'late', ghost: 'absent', s3: 1 },
+        '2026-02-30': { at: 1, marks: { s1: 'absent' } },
+        yesterday: { at: 1, marks: {} },
+        '2026-10-20': 'nope',
+        '2026-10-21': { at: 'soon', marks: { s1: 'present', s2: 'late', ghost: 'absent', s3: 1 } },
+        '2026-10-22': { at: 4, marks: { s1: 'absent' }, cleared: true },
       },
       joined: { s1: 'nope', ghost: '2026-10-01', s2: '2026-10-01' },
     };
     expect(parseBackup(JSON.stringify(raw)).classes[0]!.attendance).toEqual({
-      days: { '2026-10-21': { s2: 'late' } },
+      days: {
+        '2026-10-21': { at: 0, marks: { s2: 'late' } },
+        '2026-10-22': { at: 4, marks: {}, cleared: true },
+      },
       joined: { s2: '2026-10-01' },
     });
   });
 
-  it("carries this device's log into a class that arrives without the field", () => {
+  it("keeps this device's log when a class arrives without the field (an older build wrote it)", () => {
     const here = parseBackup(JSON.stringify(fullState())).classes;
-    here[0]!.attendance = { days: { '2026-10-21': { s1: 'absent', gone: 'late' } }, joined: {} };
+    here[0]!.attendance = { days: { '2026-10-21': { at: 3, marks: { s1: 'absent', gone: 'late' } } }, joined: {} };
     const raw = JSON.parse(JSON.stringify(fullState()));
     delete raw.classes[0].attendance;
     const got = parseBackup(JSON.stringify(raw), here).classes[0]!.attendance;
-    expect(got).toEqual({ days: { '2026-10-21': { s1: 'absent' } }, joined: {} });
-    got.days['2026-10-21']!.s1 = 'late';
-    expect(here[0]!.attendance.days['2026-10-21']!.s1).toBe('absent'); // never aliased
+    expect(got).toEqual({ days: { '2026-10-21': { at: 3, marks: { s1: 'absent' } } }, joined: {} });
+    got.days['2026-10-21']!.marks.s1 = 'late';
+    expect(here[0]!.attendance.days['2026-10-21']!.marks.s1).toBe('absent'); // never aliased
   });
 
-  it('takes a class that has the field exactly as written, even when empty', () => {
+  it("merges an incoming log with this device's: an empty incoming log erases nothing, a newer day wins", () => {
     const here = parseBackup(JSON.stringify(fullState())).classes;
-    here[0]!.attendance.days['2026-10-21'] = { s1: 'absent' };
-    expect(parseBackup(JSON.stringify(fullState()), here).classes[0]!.attendance).toEqual({
-      days: {},
-      joined: {},
+    here[0]!.attendance.days['2026-10-21'] = { at: 3, marks: { s1: 'absent' } };
+    expect(parseBackup(JSON.stringify(fullState()), here).classes[0]!.attendance.days).toEqual({
+      '2026-10-21': { at: 3, marks: { s1: 'absent' } },
+    });
+    const newer = fullState();
+    newer.classes[0]!.attendance.days['2026-10-21'] = { at: 9, marks: { s2: 'late' } };
+    expect(parseBackup(JSON.stringify(newer), here).classes[0]!.attendance.days).toEqual({
+      '2026-10-21': { at: 9, marks: { s2: 'late' } },
     });
   });
 });

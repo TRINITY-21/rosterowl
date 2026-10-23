@@ -221,6 +221,75 @@ async function seedRoster(page, names) {
   await ctx.close();
 }
 
+// --- 5 & 6. attendance survives documents from builds that predate it -----
+// An older build drops the `attendance` field from every class it saves. The
+// log must survive (a) adopting such a document from the server and (b) the
+// update order where this device itself ran the old build, then updated and
+// is "in step" with a server that still has the log.
+const marks = { '2026-10-21': { at: 100, marks: { s0: 'absent' } } };
+function attendanceDoc(withLog) {
+  const cls = {
+    id: 'real-class',
+    name: 'Period 2',
+    roomId: 'r1',
+    students: [{ id: 's0', first: 'Ava', last: '', absent: false, zonePref: null }],
+    seating: {},
+    locked: [],
+    apart: [],
+    together: [],
+    pickerHistory: [],
+    jobs: { titles: [], wheel: [], offset: 0 },
+    wordLists: { bingo: '', flashcards: '' },
+  };
+  if (withLog) cls.attendance = { days: marks, joined: {} };
+  return {
+    version: 1,
+    rooms: [{ id: 'r1', name: 'Room 12', desks: [], teacherDesk: null, door: null }],
+    classes: [cls],
+    activeClassId: 'real-class',
+    settings: {},
+  };
+}
+
+async function attendanceRun(name, { localHasLog, serverHasLog, rememberedRev }) {
+  const puts = [];
+  const { ctx, page } = await signedIn({
+    doc: (r) => {
+      if (r.request().method() === 'PUT') {
+        puts.push(JSON.parse(r.request().postData()));
+        return r.fulfill({ json: { rev: 6, updatedAt: Date.now() } });
+      }
+      return r.fulfill({ json: { rev: 5, updatedAt: Date.now(), device: 'Chrome on Windows', doc: attendanceDoc(serverHasLog) } });
+    },
+  });
+  await page.goto(base + '/attendance/', { waitUntil: 'networkidle' });
+  await page.evaluate(
+    ({ doc, rev }) => {
+      localStorage.setItem('rosterowl:v1', JSON.stringify(doc));
+      localStorage.setItem('rosterowl:sync:v1', JSON.stringify({ rev, mark: 'written by an older build' }));
+    },
+    { doc: attendanceDoc(localHasLog), rev: rememberedRev }
+  );
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(4500);
+  const live = await page.evaluate(() => JSON.parse(localStorage.getItem('rosterowl:v1')).classes[0].attendance);
+  assert.deepEqual(live?.days, marks, `${name}: this device must keep the log`);
+  assert.ok(puts.length > 0, `${name}: the device should push`);
+  assert.deepEqual(
+    puts.at(-1).doc.classes[0].attendance?.days,
+    marks,
+    `${name}: what goes back to the server must carry the log`
+  );
+  result[name] = { puts: puts.length };
+  await ctx.close();
+}
+
+// (a) The server moved on (rev 5) with a stripped copy; this device has the log.
+await attendanceRun('strippedServerCopy', { localHasLog: true, serverHasLog: false, rememberedRev: 4 });
+// (b) This device's own copy was stripped by the old build; it is in step (rev 5)
+// with a server that still has the log, and must not push an empty one over it.
+await attendanceRun('updatedFromOldBuild', { localHasLog: false, serverHasLog: true, rememberedRev: 5 });
+
 await browser.close();
 result.errors = errors;
 console.log(JSON.stringify(result, null, 2));
