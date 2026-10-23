@@ -7,7 +7,12 @@ import type { PDFFont } from 'pdf-lib';
 import { PDFDocument, rgb } from 'pdf-lib';
 import type { PdfFonts, Student } from './types';
 
-export type NameOrder = 'roster' | 'first' | 'last';
+// Live in names.ts (no pdf-lib there) so tools can sort a roster on screen
+// without loading the PDF engine; re-exported for existing callers.
+import type { NameOrder } from './names';
+export type { NameOrder } from './names';
+export { orderedNames } from './names';
+import { orderedNames } from './names';
 
 export interface ChecklistOptions {
   paper: 'letter' | 'a4';
@@ -44,22 +49,6 @@ function fit(font: PDFFont, text: string, maxW: number, max: number): number {
   return Math.min(max, maxW / unitW);
 }
 
-/** Sorted copy; display name follows the sort ("Last, First" for last-name order). */
-export function orderedNames(
-  students: Student[],
-  order: NameOrder,
-): { student: Student; label: string }[] {
-  const firstLast = (s: Student) => `${s.first} ${s.last}`.trim();
-  const lastFirst = (s: Student) => (s.last ? `${s.last}, ${s.first}` : s.first);
-  const rows = students.map((s) => ({ student: s, label: firstLast(s) }));
-  if (order === 'first') {
-    rows.sort((a, b) => firstLast(a.student).localeCompare(firstLast(b.student)));
-  } else if (order === 'last') {
-    for (const r of rows) r.label = lastFirst(r.student);
-    rows.sort((a, b) => lastFirst(a.student).localeCompare(lastFirst(b.student)));
-  }
-  return rows;
-}
 
 export async function renderChecklistPdf(
   students: Student[],

@@ -2,7 +2,11 @@
 <script lang="ts">
   import { app } from '../lib/appState.svelte';
   import { createPdfPreview } from '../lib/pdfPreview.svelte';
-  import type { NameOrder } from '../lib/pdfChecklist';
+  import type { NameOrder } from '../lib/names';
+  import { defaultMarkingDay, printMonths } from '../lib/attendance';
+  import { emptyAttendance } from '../lib/types';
+  import TakeAttendance from './TakeAttendance.svelte';
+  import ConfirmDialog from './ConfirmDialog.svelte';
   import PasteModal from './PasteModal.svelte';
   import Toasts from './Toasts.svelte';
   import ClassSwitcher from './ClassSwitcher.svelte';
@@ -18,18 +22,29 @@
 
   app.load();
 
-  // The current month plus the next 11 — the value carries year + 0-based month.
   const now = new Date();
-  const monthOptions = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    return {
-      key: `${d.getFullYear()}-${d.getMonth()}`,
-      label: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
-    };
-  });
+  const keyOf = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
+
+  // The school day being marked. Stepping to another day moves the printed
+  // month with it, so the preview always shows the marks being made.
+  let markingDay = $state(defaultMarkingDay(now));
 
   let pasteMode = $state<'new' | 'add' | null>(null);
-  let monthKey = $state(monthOptions[0]!.key);
+  let monthKey = $state(keyOf(markingDay));
+
+  // Months with taken days, the month being marked, and this month plus the
+  // next 11 — the value carries year + 0-based month.
+  const monthOptions = $derived(
+    printMonths(now, app.activeClass?.attendance ?? emptyAttendance(), markingDay).map(({ year, month }) => {
+      const d = new Date(year, month, 1);
+      return { key: keyOf(d), label: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) };
+    }),
+  );
+
+  function setMarkingDay(d: Date) {
+    markingDay = d;
+    monthKey = keyOf(d);
+  }
   let nameOrder = $state<NameOrder>('last');
   let orientation = $state<'portrait' | 'landscape'>('landscape');
   let paper = $state<'letter' | 'a4'>('letter');
@@ -50,6 +65,8 @@
   let unrenderable = $state<string[]>([]);
   // Names only (privacy rule). Tracked by the preview effect so roster edits regenerate.
   const namesKey = $derived(nameStamp(cls?.students));
+  // Every mark, so the preview follows each tap.
+  const attendanceKey = $derived(JSON.stringify(cls?.attendance ?? null));
   // Never show a stale or placeholder day count — the register is only ever
   // one page, so the number is the one thing the note actually promises.
   const daysLabel = $derived(generating || days === 0 ? '…' : String(days));
@@ -93,7 +110,7 @@
         import('../lib/pdfFonts'),
       ]);
       const fonts = await loadPdfFonts();
-      const result = await renderAttendancePdf(c.students, o, fonts);
+      const result = await renderAttendancePdf(c.students, o, fonts, $state.snapshot(c.attendance));
       days = result.days;
       unrenderable = result.unrenderable;
       preview.show(result.bytes);
@@ -108,7 +125,7 @@
   }
 
   $effect(() => {
-    void [monthKey, nameOrder, orientation, paper, inkSaver, showFooter, namesKey, cls?.name, app.activeClassId];
+    void [monthKey, nameOrder, orientation, paper, inkSaver, showFooter, namesKey, attendanceKey, cls?.name, app.activeClassId];
     generating = true;
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => generate(), 350);
@@ -163,6 +180,7 @@
   {:else}
     <div class="print-grid">
       <div class="print-options">
+        <TakeAttendance day={markingDay} {nameOrder} onday={setMarkingDay} />
         <label class="print-opt">
           Month
           <select bind:value={monthKey}>
@@ -240,6 +258,7 @@
   <PasteModal mode={pasteMode} onclose={() => (pasteMode = null)} />
 {/if}
 <Toasts />
+<ConfirmDialog />
 </ToolBoundary>
 
 <style>
