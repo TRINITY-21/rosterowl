@@ -125,3 +125,15 @@ describe('parseBackup normalises, which is why sync marks are computed after it'
     expect(sparse.classes[0]!.name).toBe('Period 2');
   });
 });
+
+describe('a device still on the pre-attendance build', () => {
+  it('cannot erase the log, and the adopting device differs from the server so it pushes the log back', () => {
+    const local = stateWith(['Period 2']);
+    local.classes[0]!.attendance.days['2026-10-21'] = { 's-0': 'absent' };
+    const stripped = JSON.parse(JSON.stringify(local));
+    delete stripped.classes[0].attendance;
+    const adopted = parseBackup(JSON.stringify(stripped), local.classes);
+    expect(adopted.classes[0]!.attendance).toEqual(local.classes[0]!.attendance);
+    expect(fingerprint(adopted)).not.toBe(fingerprint(parseBackup(JSON.stringify(stripped))));
+  });
+});

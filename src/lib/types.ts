@@ -70,6 +70,27 @@ export interface WordLists {
   flashcards: string;
 }
 
+/** A day's exceptions. Present is the default and is never stored. */
+export type AttendanceMark = 'absent' | 'late';
+
+/**
+ * Daily attendance for one class. A date key being present means attendance
+ * was taken that day; enrolled students not listed in it were present.
+ */
+export interface AttendanceLog {
+  /** Device-local date 'YYYY-MM-DD' -> that day's absent/late marks. */
+  days: Record<string, Record<Id, AttendanceMark>>;
+  /**
+   * Student id -> the first date they count from, for students added after
+   * attendance had started. Missing = on the roster from the beginning.
+   */
+  joined: Record<Id, string>;
+}
+
+export function emptyAttendance(): AttendanceLog {
+  return { days: {}, joined: {} };
+}
+
 export function emptyJobs(): JobsState {
   return { titles: [], wheel: [], offset: 0 };
 }
@@ -95,6 +116,7 @@ export interface ClassData {
   pickerHistory: Id[];
   jobs: JobsState;
   wordLists: WordLists;
+  attendance: AttendanceLog;
 }
 
 export interface AppSettings {

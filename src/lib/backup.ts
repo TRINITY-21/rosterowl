@@ -4,6 +4,8 @@
 
 import type {
     AppSettings,
+    AttendanceLog,
+    AttendanceMark,
     ClassData,
     Desk,
     Id,
@@ -36,7 +38,15 @@ export function backupFilename(date: Date = new Date()): string {
   return `rosterowl-backup-${y}-${m}-${d}.json`;
 }
 
-export function parseBackup(json: string): PersistedState {
+/**
+ * @param carryFrom the classes already in memory, when this document is about
+ * to replace them. A class that arrives with no `attendance` field at all was
+ * written by a build that predates attendance — a teacher's other device
+ * that has not taken the update yet — and that build drops the field rather
+ * than meaning to erase it. Such a class keeps the log from `carryFrom`. A
+ * class that has the field, even an empty one, is taken exactly as written.
+ */
+export function parseBackup(json: string, carryFrom?: readonly ClassData[]): PersistedState {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -56,7 +66,9 @@ export function parseBackup(json: string): PersistedState {
   if (!Array.isArray(candidate.rooms) || !Array.isArray(candidate.classes)) fail();
 
   const rooms = candidate.rooms.map(cleanRoom);
-  const classes = candidate.classes.map(cleanClass).map((cls) => sanitizeClass(cls, rooms));
+  const classes = candidate.classes
+    .map((v) => cleanClass(v, carryFrom))
+    .map((cls) => sanitizeClass(cls, rooms));
   const classIds = new Set(classes.map((cls) => cls.id));
   const requested = typeof candidate.activeClassId === 'string' ? candidate.activeClassId : null;
 
@@ -175,9 +187,45 @@ function cleanWordLists(v: unknown): WordLists {
   };
 }
 
-function cleanClass(v: unknown): ClassData {
+/** A real calendar date written 'YYYY-MM-DD' — not merely that shape. */
+export function isDateKey(s: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(y, mo - 1, d);
+  return date.getFullYear() === y && date.getMonth() === mo - 1 && date.getDate() === d;
+}
+
+const MARKS: readonly AttendanceMark[] = ['absent', 'late'];
+
+// Always builds fresh objects, so a log carried over from live (reactive)
+// state is never shared with it.
+function cleanAttendance(v: unknown): AttendanceLog {
+  const rec = isRecord(v) ? v : {};
+  const days: AttendanceLog['days'] = {};
+  if (isRecord(rec.days)) {
+    for (const [date, marks] of Object.entries(rec.days)) {
+      if (!isDateKey(date) || !isRecord(marks)) continue;
+      const day: Record<Id, AttendanceMark> = {};
+      for (const [id, mark] of Object.entries(marks)) {
+        if (MARKS.includes(mark as AttendanceMark)) day[id] = mark as AttendanceMark;
+      }
+      days[date] = day;
+    }
+  }
+  const joined: AttendanceLog['joined'] = {};
+  if (isRecord(rec.joined)) {
+    for (const [id, date] of Object.entries(rec.joined)) {
+      if (typeof date === 'string' && isDateKey(date)) joined[id] = date;
+    }
+  }
+  return { days, joined };
+}
+
+function cleanClass(v: unknown, carryFrom?: readonly ClassData[]): ClassData {
   if (!isRecord(v)) fail();
   if (!Array.isArray(v.students)) fail();
+  const carry = 'attendance' in v ? undefined : carryFrom?.find((c) => c.id === v.id);
   return {
     id: requireString(v.id),
     name: optionalString(v.name, ''),
@@ -192,6 +240,7 @@ function cleanClass(v: unknown): ClassData {
       : [],
     jobs: cleanJobs(v.jobs),
     wordLists: cleanWordLists(v.wordLists),
+    attendance: cleanAttendance(carry ? carry.attendance : v.attendance),
   };
 }
 
@@ -203,6 +252,14 @@ function sanitizeClass(cls: ClassData, rooms: Room[]): ClassData {
   for (const [deskId, studentId] of Object.entries(cls.seating)) {
     if (deskIds.has(deskId) && studentIds.has(studentId)) seating[deskId] = studentId;
   }
+  // A day whose marks all belonged to removed students stays a taken day.
+  const days: AttendanceLog['days'] = {};
+  for (const [date, marks] of Object.entries(cls.attendance.days)) {
+    days[date] = Object.fromEntries(Object.entries(marks).filter(([id]) => studentIds.has(id)));
+  }
+  const joined = Object.fromEntries(
+    Object.entries(cls.attendance.joined).filter(([id]) => studentIds.has(id)),
+  );
   const seenWheel = new Set<Id>();
   const wheel = cls.jobs.wheel.filter(
     (id) => studentIds.has(id) && !seenWheel.has(id) && (seenWheel.add(id), true),
@@ -220,6 +277,7 @@ function sanitizeClass(cls: ClassData, rooms: Room[]): ClassData {
       wheel,
       offset: wheel.length ? cls.jobs.offset % wheel.length : 0,
     },
+    attendance: { days, joined },
   };
 }
 

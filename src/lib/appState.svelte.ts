@@ -26,7 +26,7 @@ import type {
     Student,
     ZoneKind,
 } from './types';
-import { STORAGE_KEY, emptyJobs, emptyWordLists } from './types';
+import { STORAGE_KEY, emptyAttendance, emptyJobs, emptyWordLists } from './types';
 import {
     AUTO_SNAPSHOT_MS,
     fingerprint,
@@ -108,6 +108,7 @@ function sampleData(
       offset: 0,
     },
     wordLists: emptyWordLists(),
+    attendance: emptyAttendance(),
   };
   const result = solve({
     desks: room.desks,
@@ -263,7 +264,7 @@ class AppState {
       window.addEventListener('storage', (e) => {
         if (e.key !== STORAGE_KEY || !e.newValue) return;
         try {
-          this.adoptState(parseBackup(e.newValue));
+          this.adoptState(parseBackup(e.newValue, $state.snapshot(this.classes)));
         } catch {
           /* ignore malformed writes from other tabs */
         }
@@ -378,9 +379,18 @@ class AppState {
   restoreVersion(id: Id) {
     const entry = this.versions.find((v) => v.id === id);
     if (!entry) return;
+    // Through the same parser as every other incoming document: a snapshot
+    // taken by an older build lacks fields this one needs, and keeps this
+    // device's attendance (see parseBackup).
+    let state: PersistedState;
+    try {
+      state = parseBackup(JSON.stringify(entry.state), $state.snapshot(this.classes));
+    } catch {
+      this.toast("That version couldn't be read, so nothing was changed.", 'warn');
+      return;
+    }
     // The teacher can always get back to where they were before restoring.
     this.captureVersion('safety');
-    const state: PersistedState = JSON.parse(JSON.stringify(entry.state));
     this.rooms = state.rooms;
     this.classes = state.classes;
     this.activeClassId =
@@ -485,6 +495,7 @@ class AppState {
       pickerHistory: [],
       jobs: emptyJobs(),
       wordLists: emptyWordLists(),
+      attendance: emptyAttendance(),
     };
     cls.jobs.wheel = cls.students.map((s) => s.id);
     this.classes.push(cls);
@@ -923,7 +934,7 @@ class AppState {
   async restoreBackup(file: File) {
     try {
       const text = await file.text();
-      const state = parseBackup(text);
+      const state = parseBackup(text, $state.snapshot(this.classes));
       if (this.classes.length > 0) {
         const ok = await confirmDialog({
           title: 'Restore this backup?',

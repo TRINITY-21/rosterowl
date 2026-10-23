@@ -52,6 +52,7 @@ function makeClass(): ClassData {
     pickerHistory: [],
     jobs: { titles: [], wheel: [], offset: 0 },
     wordLists: { bingo: '', flashcards: '' },
+    attendance: { days: {}, joined: {} },
   };
 }
 

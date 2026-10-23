@@ -253,8 +253,9 @@ class Sync {
       }
 
       // The server has moved on. Adopt it — but never at the cost of local work.
-      const remote = this.#validate(body.doc);
-      if (!remote) throw new Error('unreadable document from server');
+      const remote = this.#validate(body.doc, local.classes);
+      const asStored = this.#validate(body.doc);
+      if (!remote || !asStored) throw new Error('unreadable document from server');
       const localIsUnsaved = localMark !== this.#memory.mark;
       // The seeded demo class is not the teacher's work; replacing it silently
       // is right, and calling it a conflict would be noise.
@@ -263,7 +264,11 @@ class Sync {
       }
       app.adoptState(remote);
       app.saveNow();
-      this.#remember(body.rev, fingerprint(remote));
+      // Remember the server's copy as the server holds it. If an older build
+      // stripped this device's attendance from it, `remote` carried the log
+      // back, so the local document now differs and the push saveNow()
+      // scheduled puts the log back on the server.
+      this.#remember(body.rev, fingerprint(asStored));
       this.status = 'idle';
       this.lastSyncedAt = Date.now();
       if (localIsUnsaved && !app.isSample) {
@@ -313,12 +318,15 @@ class Sync {
         // Another device wrote first. Keep this device's work as a version, take
         // theirs, and let the teacher choose which one they meant.
         const body = (await response.json()) as { rev: number; doc: unknown; device: string | null };
-        const remote = this.#validate(body.doc);
-        if (!remote) throw new Error('unreadable document from server');
+        const remote = this.#validate(body.doc, state.classes);
+        const asStored = this.#validate(body.doc);
+        if (!remote || !asStored) throw new Error('unreadable document from server');
         app.captureVersion('safety', `From this device — before ${body.device ?? 'another device'} synced`);
         app.adoptState(remote);
         app.saveNow();
-        this.#remember(body.rev, fingerprint(remote));
+        // As in pull(): the server's copy as stored, so a carried-back log
+        // is pushed up again.
+        this.#remember(body.rev, fingerprint(asStored));
         this.status = 'idle';
         this.lastSyncedAt = Date.now();
         app.toast(
@@ -371,9 +379,9 @@ class Sync {
    * that a restored backup file does, so a malformed or hostile document cannot
    * reach the UI. It is the reason the server can treat the blob as opaque.
    */
-  #validate(doc: unknown): PersistedState | null {
+  #validate(doc: unknown, carryFrom?: PersistedState['classes']): PersistedState | null {
     try {
-      return parseBackup(JSON.stringify(doc));
+      return parseBackup(JSON.stringify(doc), carryFrom);
     } catch {
       return null;
     }
