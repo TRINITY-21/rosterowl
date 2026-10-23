@@ -8,6 +8,10 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import type { PdfFonts, Student } from './types';
 import type { NameOrder } from './pdfChecklist';
 import { orderedNames } from './pdfChecklist';
+import { schoolDays } from './attendance';
+
+// Moved to attendance.ts (no pdf-lib there); re-exported for existing callers.
+export { schoolDays } from './attendance';
 
 export interface AttendanceOptions {
   paper: 'letter' | 'a4';
@@ -36,21 +40,6 @@ export const MONTH_NAMES = [
   'November',
   'December',
 ] as const;
-
-// getDay() index -> letter. Single letters on purpose: the day number printed
-// beside each letter disambiguates Tuesday/Thursday.
-const WEEKDAY_LETTERS = ['', 'M', 'T', 'W', 'T', 'F', ''] as const;
-
-/** Every Mon–Fri of the month. `month` is 0-based like JS Date. */
-export function schoolDays(year: number, month: number): { day: number; weekday: string }[] {
-  const out: { day: number; weekday: string }[] = [];
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  for (let day = 1; day <= lastDay; day++) {
-    const dow = new Date(year, month, day).getDay();
-    if (dow >= 1 && dow <= 5) out.push({ day, weekday: WEEKDAY_LETTERS[dow]! });
-  }
-  return out;
-}
 
 const PAGE_SIZES: Record<AttendanceOptions['paper'], [number, number]> = {
   letter: [612, 792],

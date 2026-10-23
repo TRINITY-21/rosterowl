@@ -2,6 +2,15 @@
 // through actions here so persistence, conflict checking, and toasts stay
 // consistent. Rendered client-only — but every browser API is still guarded.
 
+import {
+  clearDay,
+  dateKey,
+  forgetStudent,
+  markAllPresent,
+  markFlaggedAbsent,
+  noteNewStudents,
+  tapStudent,
+} from './attendance';
 import { backupFilename, parseBackup, serializeBackup } from './backup';
 import { confirmDialog } from './dialog.svelte';
 import { TEMPLATES, distance, makeCluster, makeGroups, newId } from './geometry';
@@ -509,9 +518,15 @@ class AppState {
   addStudents(parsed: ParsedName[]) {
     const cls = this.activeClass;
     if (!cls) return;
-    for (const p of parsed) {
-      cls.students.push({ id: newId(), first: p.first, last: p.last, absent: false, zonePref: null });
-    }
+    const added = parsed.map((p) => ({
+      id: newId(),
+      first: p.first,
+      last: p.last,
+      absent: false,
+      zonePref: null,
+    }));
+    cls.students.push(...added);
+    noteNewStudents(cls.attendance, added.map((st) => st.id), dateKey(new Date()));
     syncWheel(cls.jobs, cls.students);
     this.refreshConflicts();
     this.scheduleSave();
@@ -535,6 +550,7 @@ class AppState {
     cls.apart = cls.apart.filter((p) => p.a !== id && p.b !== id);
     cls.together = cls.together.filter((p) => p.a !== id && p.b !== id);
     cls.pickerHistory = cls.pickerHistory.filter((h) => h !== id);
+    forgetStudent(cls.attendance, id);
     syncWheel(cls.jobs, cls.students);
     if (this.selectedStudentId === id) this.selectedStudentId = null;
     this.refreshConflicts();
@@ -546,6 +562,41 @@ class AppState {
     if (!s) return;
     s.absent = !s.absent;
     this.refreshConflicts();
+    this.scheduleSave();
+  }
+
+  // ---- attendance ---------------------------------------------------------
+  // "Today" is read at the moment of the tap, not when the page loaded, so a
+  // tab left open overnight never files this morning's marks under yesterday.
+
+  tapAttendance(date: string, id: Id) {
+    const cls = this.activeClass;
+    if (!cls) return;
+    tapStudent(cls, date, id, dateKey(new Date()));
+    this.refreshConflicts();
+    this.scheduleSave();
+  }
+
+  markEveryonePresent(date: string) {
+    const cls = this.activeClass;
+    if (!cls) return;
+    markAllPresent(cls, date, dateKey(new Date()));
+    this.refreshConflicts();
+    this.scheduleSave();
+  }
+
+  markFlaggedAbsentToday(date: string) {
+    const cls = this.activeClass;
+    if (!cls) return;
+    markFlaggedAbsent(cls, date, dateKey(new Date()));
+    this.refreshConflicts();
+    this.scheduleSave();
+  }
+
+  clearAttendanceDay(date: string) {
+    const cls = this.activeClass;
+    if (!cls) return;
+    clearDay(cls, date);
     this.scheduleSave();
   }
 
