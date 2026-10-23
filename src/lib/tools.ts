@@ -127,8 +127,8 @@ export const TOOL_GROUPS: ToolGroup[] = [
         label: 'Attendance',
         title: 'Attendance roster',
         icon: 'printer',
-        blurb: "The month's real school days, pre-built",
-        copy: "The month's real school days across the top, your class down the side — the attendance roster, rebuilt in one click.",
+        blurb: 'Take it daily, print the month filled in',
+        copy: "Tap who's absent or late each day, then print the month's register already filled in — or a blank one for your own marks.",
       },
       {
         href: '/bingo/',
